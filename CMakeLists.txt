@@ -67,7 +67,7 @@ add_custom_target(cds_headers SOURCES ${HeaderFiles})
 # -------------------------------------------------------------------------
 aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
 include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
-add_executable(upnp ${UPNP_SOURCES})
+add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
 target_link_libraries(upnp re2 lightning redox fmt spdlog ${LIBS})
 
 # -------------------------------------------------------------------------
