@@ -32,6 +32,7 @@ include(cmake/external/asio.cmake)
 include(cmake/external/fmt.cmake)
 include(cmake/external/lightning.cmake)
 include(cmake/external/rapidxml_ns.cmake)
+include(cmake/external/rapidjson.cmake)
 include(cmake/external/cxxopts.cmake)
 include(cmake/external/redox.cmake)
 include(cmake/external/spdlog.cmake)
@@ -39,7 +40,8 @@ include(cmake/external/spdlog.cmake)
 SET( INCLUDES ${INCLUDES} ${GTEST_INCLUDE_DIR} ${FMT_INCLUDE_DIR}
             ${RE2_INCLUDE_DIR} ${ASIO_INCLUDE_DIR}
             ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR}
-            ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR})
+            ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR}
+            ${RAPIDJSON_INCLUDE_DIR} ${REDOX_INCLUDE_DIR})
 
 # -------------------------------------------------------------------------
 # -----------------------   Find Dependencies       -----------------------
@@ -68,16 +70,16 @@ add_custom_target(cds_headers SOURCES ${HeaderFiles})
 aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
 include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
 add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
-target_link_libraries(upnp re2 lightning redox fmt spdlog ${LIBS})
+target_link_libraries(upnp re2 lightning redox fmt spdlog rapidjson ${LIBS})
 
 # -------------------------------------------------------------------------
 # -----------------------   Manage Test Cases       -----------------------
 # -------------------------------------------------------------------------
 if (build_tests)
-    aux_source_directory( test/ UPNP_SOURCES_TEST )
+    aux_source_directory( ${PROJECT_SOURCE_DIR}/test/ UPNP_SOURCES_TEST )
     enable_testing()
     include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
     add_executable(test_upnp ${UPNP_SOURCES_TEST} ${UPNP_SOURCES})
-    target_link_libraries(test_upnp ${GTEST_MAIN_PATH} cxxopts re2 lightning rapidxml redox fmt spdlog gtest ${LIBS})
+    target_link_libraries(test_upnp ${GTEST_MAIN_PATH} re2 lightning redox fmt spdlog rapidjson gtest ${LIBS})
     add_test(upnp-tests test_upnp)
 endif()
