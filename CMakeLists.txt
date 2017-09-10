@@ -22,6 +22,15 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     add_definitions(-std=c++14)
 endif()
 
+add_definitions(-DASIO_STANDALONE)
+add_definitions(-DCDS_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}")
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DSPDLOG_TRACE_ON)
+    add_definitions(-DSPDLOG_DEBUG_ON)
+    add_definitions(-DDEBUG)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
 # -------------------------------------------------------------------------
 # ---------------------   External Dependencies       ---------------------
 # -------------------------------------------------------------------------

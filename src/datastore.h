@@ -242,8 +242,7 @@ static redis_ptr make_connection ( const std::string db /** @param db database h
 
 /** @brief flush content with the given prefix. */ //TODO key with wildcard ':*'
 static void flush(  redis_ptr redis /** @param redis the database pointer. */, const std::string& prefix /** @param prefix the prefix. */ )
-{ redis->command ( { "EVAL", "return redis.call('del', unpack(redis.call('keys', ARGV[1])))", "0", fmt::format( "{}:*", prefix ) } ); }
-
+{ redis->command ( { "EVAL", "local keys = redis.call('keys', ARGV[1]) \n for i=1,#keys,5000 do \n redis.call('del', unpack(keys, i, math.min(i+4999, #keys))) \n end \n return keys", "0", fmt::format( "{}:*", prefix ) } ); }
 
 /** @brief get the node attribute value. */
 static std::string get( redis_ptr redis /** @param redis the database pointer. */,
@@ -295,7 +294,7 @@ static void children( redis_ptr redis /** @param redis redis database pointer. *
 
     //TODO use defined type
     redox::Command< std::vector< std::string > >& _c = redis->commandSync< std::vector< std::string > >
-            ( {REDIS_ZRANGE, make_key_list( key ), std::to_string( index ), std::to_string( count ) } );
+            ( {REDIS_ZRANGE, make_key_list( key ), std::to_string( index ), std::to_string( index + count ) } );
     if( _c.ok() ) {
         for( const std::string& __c : _c.reply() ) {
             fn( __c );

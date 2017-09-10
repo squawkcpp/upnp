@@ -356,7 +356,6 @@ inline void parse( const std::string & xml, Device & device ) {
     doc.parse<0>( const_cast< char* >(  xml.c_str() ) );
     auto root_node = doc.first_node();
     FOR( "*", root_node, [&device]( rapidxml_ns::xml_node<>* body_node ) {
-        std::cout << body_node->local_name() << std::endl;
         if( strcmp( "specVersion", body_node->local_name() ) == 0 ) {
             FOR( "*", body_node, [&device]( rapidxml_ns::xml_node<>* version_node ) {
                 if( strcmp( "major", version_node->local_name() ) == 0 ) {

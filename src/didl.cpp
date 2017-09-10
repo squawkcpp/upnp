@@ -1,5 +1,7 @@
 #include "didl.h"
 
+#include "spdlog/spdlog.h"
+
 #include "_utils.h"
 
 namespace upnp {
@@ -12,14 +14,14 @@ Didl::Didl( data::redis_ptr redis, config_t config ) : redis_(redis), config_(co
     attr( &doc_, root_node_, "xmlns:pv", XML_NS_PV );
 }
 
-void Didl::write( const std::string& key, const int& child_count, const std::map< std::string, std::string >& values ) {
+void Didl::write( const std::string& key, const std::map< std::string, std::string >& values ) {
 
     if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::folder ) {
         auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, DIDL_ELEMENT_CONTAINER, "" );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( child_count ) );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.storageFolder" );
@@ -30,7 +32,7 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( child_count ) );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.series" );
@@ -50,7 +52,7 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( child_count ) );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.album.musicAlbum" );
@@ -64,6 +66,29 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
             attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
         }
         ++result_;
+
+
+    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::file ) {
+
+        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
+
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item" );
+
+        auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
+            config_->cds_uri, key, values.at( "ext" ) ) );
+
+        attr( &doc_, _res_n, "protocolInfo", fmt::format( "http-get:*:{}:DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000", values.at( "mimeType" ) ) );
+
+        if( values.find( "size" ) != values.end() )
+        { attr( &doc_, _res_n, "size", values.at( "size" ) ); }
+        if( values.find( "mimeType" ) != values.end() )
+        { attr( &doc_, _res_n, "mime-type", values.at( "mimeType" ) ); }
+        ++result_;
+
 
     } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::audio ) {
 
@@ -87,6 +112,10 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
         { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:date", values.at( "year" ) ); }
         if( values.find( "genre" ) != values.end() )
         { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:genre", values.at( "genre" ) ); }
+
+        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
+            fmt::format( "{0}{1}", config_->cds_uri, data::get( redis_, values.at( data::KEY_PARENT ), "thumb" ) ) );
+        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
 
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
@@ -114,9 +143,9 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
 //        xml_writer_->element ( item_element_, upnp::XML_NS_UPNP, "playbackCount", std::to_string( db::get< int >( statement, didl::DidlMusicTrack::playback_count ) ) );
 //        xml_writer_->element ( item_element_, upnp::XML_NS_UPNP, "rating", std::to_string( db::get< int >( statement, didl::DidlMusicTrack::rating ) ) );
 
-//        xml_writer_->attribute ( dlna_res_node, "", "dlnaProfile", db::get< const char * >( statement, didl::DidlMusicTrack::profile ) );
 
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::image ) {
+    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::image ||
+               data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::cover ) {
 
         auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
@@ -176,7 +205,7 @@ void Didl::write( const std::string& key, const int& child_count, const std::map
         ++result_;
 
     } else {
-        std::cout << "class not found: " << values.at( data::KEY_CLASS ) << std::endl;
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "class not found: {0}", values.at( data::KEY_CLASS ) );
     }
 }
 }//namespace upnp

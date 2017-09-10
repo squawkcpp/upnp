@@ -31,9 +31,7 @@ UpnpCommand Server::parse( const std::string& body ) {
     doc.parse<0>( const_cast< char* >(  body.c_str() ) );
     auto root_node = doc.first_node();
     FOR( "Body", root_node, [&_upnp_command]( rapidxml_ns::xml_node<>* body_node ) {
-        std::cout << body_node->local_name() << std::endl;
         FOR( "*", body_node, [&_upnp_command]( rapidxml_ns::xml_node<>* browse_node ) {
-            std::cout << browse_node->local_name() << std::endl;
             _upnp_command.type = _upnp_command.parse( browse_node->local_name() );
             FOR( "*", browse_node, [&_upnp_command]( rapidxml_ns::xml_node<>* _flag_node ) {
                 _upnp_command.values[_flag_node->local_name() ] = _flag_node->value();
@@ -44,51 +42,52 @@ UpnpCommand Server::parse( const std::string& body ) {
 }
 
 http::http_status Server::cds( http::Request& request, http::Response& response ) {
-    UpnpCommand _upnp_command = parse( request.str() );
-    std::cout << "cds: " << _upnp_command << std::endl;
-    if(_upnp_command.type == UpnpCommand::BROWSE ) {
-        if ( _upnp_command.contains( BROWSE_FLAG ) &&
-             _upnp_command.get( BROWSE_FLAG ) == BROWSE_METADATA ) {
 
-            std::cout << "browse metadata" << std::endl;
-//        } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
-//                    _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN &&
-//                    _upnp_command.get( OBJECT_ID ) == "0" ) {
+    if( request.method() == "SUBSCRIBE" ) {
+        SPDLOG_DEBUG( spdlog::get( LOGGER), "event/cds: {0}", request.str() );
 
-//            std::cout << "browse root nodes" << std::endl;
+    } else if( request.method() == "POST" ) {
+        UpnpCommand _upnp_command = parse( request.str() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER), _upnp_command.str() );
+        if(_upnp_command.type == UpnpCommand::BROWSE ) {
+            if ( _upnp_command.contains( BROWSE_FLAG ) &&
+                 _upnp_command.get( BROWSE_FLAG ) == BROWSE_METADATA ) {
 
-        } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
-                    _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN ) {
+    //        } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
+    //                    _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN &&
+    //                    _upnp_command.get( OBJECT_ID ) == "0" ) {
 
-            std::cout << "browse children:" << _upnp_command.get( OBJECT_ID ) << std::endl;
-            ////            _container.www->bind( http::mod::Match<std::string>( "^\\/+(root|file|ebook|movie|album|serie|artist|image|[[:digit:]]+)\\/+nodes$", data::KEY_KEY ),
-            ////            _container.www->bind( http::mod::Match< std::string, std::string >( "^\\/+(ebook|movie|album|serie|artist|image)\\/+(.*)$", data::KEY_TYPE, cds::PARAM_NAME ),
+    //            std::cout << "browse root nodes" << std::endl;
 
-            int _index = ( _upnp_command.contains( "StartingIndex" ) ? std::stoi( _upnp_command.get( "StartingIndex" ) ) : 0 );
-            int _count = ( _upnp_command.contains( "RequestedCount" ) ? std::stoi( _upnp_command.get( "RequestedCount" ) ) : 0 );
-            std::string _object_id = _upnp_command.get( OBJECT_ID );
-            if( _object_id == "0" ) {
-                _object_id = "/";
+            } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
+                        _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN ) {
+
+                int _index = ( _upnp_command.contains( "StartingIndex" ) ? std::stoi( _upnp_command.get( "StartingIndex" ) ) : 0 );
+                int _count = ( _upnp_command.contains( "RequestedCount" ) ? std::stoi( _upnp_command.get( "RequestedCount" ) ) : 0 );
+                std::string _object_id = _upnp_command.get( OBJECT_ID );
+                if( _object_id == "0" ) {
+                    _object_id = "/";
+                }
+
+                Didl _didl( redis_, config_ );
+                data::children( redis_, _object_id, _index, _count, [this,&_didl]( const std::string& key ) {
+                    _didl.write( key, data::node( redis_, key ) );
+                });
+
+                //TODO SPDLOG_DEBUG( spdlog::get( LOGGER ), _didl.str() );
+                response << soap_envelope( _didl.str(), _didl.count(), data::children_count( redis_, _object_id ) );
+
+            } else {
+                SPDLOG_DEBUG( spdlog::get( LOGGER ), "unknown browse request: {0}:{1}" , _upnp_command.get( BROWSE_FLAG ), _upnp_command.get( OBJECT_ID ) );
             }
-
-            Didl _didl( redis_, config_ );
-            data::children( redis_, _object_id, _index, _count, [this,&_didl]( const std::string& key ) {
-                _didl.write( key, data::children_count( redis_, key ), data::node( redis_, key ) );
-            });
-
-            std::cout << _didl.str() << std::endl;
-            response << soap_envelope( _didl.str(), _didl.count(), data::children_count( redis_, _object_id ) );
-
+        } else if(_upnp_command.type == UpnpCommand::GET_PROTOCOL_INFO ) {
+            std::cout << "get protocol info " << std::endl;
         } else {
-            std::cout << "unknown request: " << _upnp_command.get( BROWSE_FLAG ) << ":" << _upnp_command.get( OBJECT_ID ) << std::endl;
-
+            SPDLOG_DEBUG( spdlog::get( LOGGER ), "unknown request: {0}:{1}" , _upnp_command.get( BROWSE_FLAG ), _upnp_command.get( OBJECT_ID ) );
         }
-    } else if(_upnp_command.type == UpnpCommand::GET_PROTOCOL_INFO ) {
-        std::cout << "get protocol info " << std::endl;
     } else {
-        std::cout << "other type " << _upnp_command.type << std::endl;
+        SPDLOG_DEBUG( spdlog::get( LOGGER), "cds/unknown method: {0}:", request.method(), request.uri() );
     }
-
     response.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type( http::mime::XML ) );
     return http::http_status::OK;
 }

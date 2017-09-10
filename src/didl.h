@@ -19,7 +19,7 @@ public:
     Didl( data::redis_ptr redis, config_t config );
     /** @brief Didl DTOR. */
     ~Didl() {}
-    void write( const std::string& key, const int& child_count, const std::map< std::string, std::string >& values );
+    void write( const std::string& key, const std::map< std::string, std::string >& values );
 
     /** @brief write xml to string. */
     std::string str() {

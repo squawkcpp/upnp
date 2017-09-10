@@ -52,6 +52,11 @@ struct UpnpCommand {
             out << "}";
             return out;
     }
+    std::string str() {
+        std::stringstream _stream;
+        _stream << *this;
+        return _stream.str();
+    }
 
 };
 
