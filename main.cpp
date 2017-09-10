@@ -24,13 +24,12 @@ static const char* PARAM_LISTEN_ADDRESS = "listen";
 static const char* PARAM_MULTICAST_ADDRESS = "multicast";
 static const char* PARAM_MULTICAST_PORT = "multicast-port";
 static const char* PARAM_HTTP_PORT = "http-port";
-static const char* PARAM_NAME = "name";
 static const char* PARAM_CDS_URI = "cds";
 static const char* PARAM_REDIS = "redis";
 
 struct Container {
-    upnp::config_t config;
-    data::redox_ptr redox;
+    upnp::config_t config = std::make_shared< upnp::Config >();
+    data::redis_ptr redox;
     std::shared_ptr< upnp::Server > server;
     std::shared_ptr< http::Server< http::HttpServer > > www;
     std::shared_ptr< upnp::SSDPServerImpl > ssdp;
@@ -49,7 +48,7 @@ int main( int argc, char* argv[] ) {
         ( PARAM_HTTP_PORT, "API Webserver IP port to bind to.", cxxopts::value<std::string>(), "PORT" )
         ( PARAM_MULTICAST_ADDRESS, "SSDP multicast IP-Adress to bind to.", cxxopts::value<std::string>(), "IP" )
         ( PARAM_MULTICAST_PORT, "SSDP multicast port to bind to.", cxxopts::value<std::string>(), "PORT" )
-        ( PARAM_NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "UUID" )
+        ( data::KEY_NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "UUID" )
         ( PARAM_CDS_URI, "CDS uri.", cxxopts::value<std::string>(), "URI" )
         ( PARAM_REDIS, "Redis Database (default: localhost)", cxxopts::value<std::string>()->default_value("localhost"), "HOST" )
         ( "help", "Print help")
@@ -78,8 +77,8 @@ int main( int argc, char* argv[] ) {
     { _container.config->multicast_port = options[PARAM_MULTICAST_PORT].as<std::string>(); }
     if ( options.count( PARAM_LISTEN_ADDRESS ) )
     { _container.config->listen_address = options[PARAM_LISTEN_ADDRESS].as<std::string>(); }
-    if ( options.count( PARAM_NAME ) )
-    { _container.config->name = options[PARAM_NAME].as<std::string>(); }
+    if ( options.count( data::KEY_NAME ) )
+    { _container.config->name = options[data::KEY_NAME].as<std::string>(); }
     if ( options.count( PARAM_CDS_URI ) )
     { _container.config->cds_uri = options[PARAM_CDS_URI].as<std::string>(); }
 

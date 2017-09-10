@@ -12,6 +12,7 @@
 #include "http/server.h"
 #include "http/httpserver.h"
 
+#include "_utils.h"
 #include "config.h"
 #include "datastore.h"
 
@@ -24,21 +25,49 @@ struct UpnpCommand {
     TYPE type = NONE;
     std::map< std::string, std::string > values;
     static TYPE parse( const std::string& command );
+    static std::string str( TYPE t ) {
+        switch(t) {
+            case BROWSE: return BROWSE_FLAG;
+            case GET_PROTOCOL_INFO: return BROWSE_METADATA;
+            default: return "(none)";
+        }
+    }
+
+    template< class T >
+    inline bool contains( T& value ) {
+        return( values.find( value ) != values.end() );
+    }
+
+    template< class T >
+    inline std::string get( T& key ) {
+        return( values[ key ] );
+    }
+    /** output as string. */
+    friend std::ostream& operator<< ( std::ostream& out, const UpnpCommand & c ) {
+            out << "{\"type\":\"" << UpnpCommand::str( c.type ) << "\"";
+            for( auto& v : c.values ) {
+                out << ", \"" << v.first << "\": \"" << v.second << "\"";
+
+            }
+            out << "}";
+            return out;
+    }
+
 };
 
-template< class T >
-inline T* element( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
-    rapidxml_ns::xml_node<> *_n = doc->allocate_node(rapidxml_ns::node_element,
-                                                     doc->allocate_string(name.c_str()),
-                                                     doc->allocate_string(value.c_str()) );
-    parent->append_node(_n);
-    return _n;
-}
-template< class T >
-inline void attr( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
-    rapidxml_ns::xml_attribute<> *_attr = doc->allocate_attribute( doc->allocate_string(name.c_str()), doc->allocate_string(value.c_str()) );
-    parent->append_attribute(_attr);
-}
+//template< class T > //TODO
+//inline T* element( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
+//    rapidxml_ns::xml_node<> *_n = doc->allocate_node(rapidxml_ns::node_element,
+//                                                     doc->allocate_string(name.c_str()),
+//                                                     doc->allocate_string(value.c_str()) );
+//    parent->append_node(_n);
+//    return _n;
+//}
+//template< class T >
+//inline void attr( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
+//    rapidxml_ns::xml_attribute<> *_attr = doc->allocate_attribute( doc->allocate_string(name.c_str()), doc->allocate_string(value.c_str()) );
+//    parent->append_attribute(_attr);
+//}
 
 /** @brief The UPNP Server class. */
 class Server {
@@ -64,7 +93,7 @@ public:
     http::http_status cms( http::Request& request, http::Response& response );
 
 private:
-    data::redox_ptr redis_;
+    data::redis_ptr redis_;
     config_t config_;
 };
 
