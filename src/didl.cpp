@@ -54,7 +54,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::TYPE_ALBUM ) );
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.album.musicAlbum" );
 
         //get the artists
@@ -168,12 +168,14 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         if( values.find( "mimeType" ) != values.end() )
         { attr( &doc_, _res_n, "mime-type", values.at( "mimeType" ) ); }
 
+        if( values.find( "width" ) != values.end() &&  values.find( "height" ) != values.end() )
         { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
         if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
         { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }
         ++result_;
 
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::movie ) {
+    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::movie ||
+               data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::episode ) {
 
         auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
@@ -181,6 +183,38 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
 
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.movie" );
+
+        auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
+            config_->cds_uri, key, values.at( "ext" ) ) );
+
+        attr( &doc_, _res_n, "protocolInfo", fmt::format( "http-get:*:{}:DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000", values.at( "mimeType" ) ) );
+
+        if( values.find( "size" ) != values.end() )
+        { attr( &doc_, _res_n, "size", values.at( "size" ) ); }
+        //TODO xml_writer_->attribute ( dlna_res_node, "", "dlnaProfile", item.dlnaProfile() );
+
+        if( values.find( "mimeType" ) != values.end() )
+        { attr( &doc_, _res_n, "mime-type", values.at( "mimeType" ) ); }
+        if( values.find( "playlength" ) != values.end() )
+        { attr( &doc_, _res_n, "duration", values.at( "playlength" ) ); }
+        if( values.find( "bitrate" ) != values.end() )
+        { attr( &doc_, _res_n, "bitrate", values.at( "bitrate" ) ); }
+
+        { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
+        if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
+        { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }
+        ++result_;
+
+    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::episode ) {
+
+        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
+        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
+
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title",
+            fmt::format( "S{}E{} {}", values.at( data::TYPE_SERIE ), values.at( data::TYPE_EPISODE ), values.at( data::KEY_NAME ) ) );
         element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.movie" );
 
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",

@@ -5,6 +5,8 @@
 #include <thread>
 #include <future>
 
+#include "spdlog/spdlog.h"
+
 namespace upnp {
 inline namespace asio_impl {
 
@@ -52,9 +54,13 @@ void SSDPServerConnection::send ( std::string request_line, std::map< std::strin
 }
 
 void SSDPServerConnection::send ( SsdpResponse response ) {
-    std::string buffer = create_header ( response.request_line, response.headers );
-        socket.send_to (
-                asio::buffer ( buffer, buffer.length() ), sender_endpoint );
+    try {
+        std::string buffer = create_header ( response.request_line, response.headers );
+            socket.send_to (
+                    asio::buffer ( buffer, buffer.length() ), sender_endpoint );
+    } catch( std::system_error& e ) {
+        spdlog::get ( LOGGER )-> warn ( "error in send response: ({}:{})", e.code().value(), e.what() );
+    }
 }
 
 void SSDPServerConnection::handle_receive_from ( const asio::error_code & error, size_t bytes_recvd ) {
