@@ -65,15 +65,22 @@ http::http_status Server::cds( http::Request& request, http::Response& response 
                 int _index = ( _upnp_command.contains( "StartingIndex" ) ? std::stoi( _upnp_command.get( "StartingIndex" ) ) : 0 );
                 int _count = ( _upnp_command.contains( "RequestedCount" ) ? std::stoi( _upnp_command.get( "RequestedCount" ) ) : 0 );
                 std::string _object_id = _upnp_command.get( OBJECT_ID );
-                if( _object_id == "0" ) {
-                    _object_id = "/";
+                if( _object_id == "" || _object_id == "0" ) {
+                    _object_id = "root";
                 }
 
                 Didl _didl( redis_, config_ );
-                data::children( redis_, _object_id, _index, _count, [this,&_didl]( const std::string& key ) {
-                    _didl.write( key, data::node( redis_, key ) );
-                });
 
+                data::NodeType::Enum _type = data::NodeType::parse( data::get( redis_, _object_id, param::CLASS ) );
+                if( _type == data::NodeType::album ) {
+                    data::files( redis_, _object_id, data::NodeType::audio, _index, _count, [this,&_didl]( const std::string& key ) {
+                        _didl.write( key, data::node( redis_, key ) );
+                    });
+                } else {
+                    data::children( redis_, _object_id, _index, _count, "alpha" /** TODO */ , "asc", "", [this,&_didl]( const std::string& key ) {
+                        _didl.write( key, data::node( redis_, key ) );
+                    });
+                }
                 //TODO SPDLOG_DEBUG( spdlog::get( LOGGER ), _didl.str() );
                 response << soap_envelope( _didl.str(), _didl.count(), data::children_count( redis_, _object_id ) );
 
@@ -129,21 +136,21 @@ http::http_status Server::description( http::Request& request, http::Response& r
     element<rapidxml_ns::xml_node<>>( &doc, _icon_48, "width", "48" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_48, "height", "48" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_48, "depth", "24" );
-    element<rapidxml_ns::xml_node<>>( &doc, _icon_48, "url", fmt::format( "{}/icons/squawk48.png", config_->cds_uri ) );
+    element<rapidxml_ns::xml_node<>>( &doc, _icon_48, "url", fmt::format( "{}/squawk48.png", config_->cds_uri ) );
 
     auto _icon_64 = element<rapidxml_ns::xml_node<>>( &doc, _icon_list, "icon", "" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "mimeType", "image/png" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "width", "64" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "height", "64" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "depth", "24" );
-    element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "url", fmt::format( "{}/icons/squawk64.png", config_->cds_uri ) );
+    element<rapidxml_ns::xml_node<>>( &doc, _icon_64, "url", fmt::format( "{}/squawk64.png", config_->cds_uri ) );
 
     auto _icon_128 = element<rapidxml_ns::xml_node<>>( &doc, _icon_list, "icon", "" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "mimeType", "image/png" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "width", "128" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "height", "128" );
     element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "depth", "24" );
-    element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "url", fmt::format( "{}/icons/squawk128.png", config_->cds_uri ) );
+    element<rapidxml_ns::xml_node<>>( &doc, _icon_128, "url", fmt::format( "{}/squawk128.png", config_->cds_uri ) );
 
     auto _service_list = element<rapidxml_ns::xml_node<>>( &doc, device_n, "serviceList", "" );
     auto _service_cds = element<rapidxml_ns::xml_node<>>( &doc, _service_list, "service", "" );

@@ -40,6 +40,8 @@ static const  std::string BROWSE_RESPONSE = "BrowseResponse";
 const static std::string DIDL_ROOT_NODE = "DIDL-Lite";
 /** @brief DIDL container name */
 const static std::string DIDL_ELEMENT_CONTAINER = "container";
+/** @brief DIDL item name */
+const static std::string DIDL_ELEMENT_ITEM = "item";
 /** @brief DIDL element class */
 const static std::string DIDL_ELEMENT_CLASS = "class";
 /** @brief DIDL TITLE */

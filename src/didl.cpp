@@ -5,6 +5,16 @@
 #include "_utils.h"
 
 namespace upnp {
+const std::array< std::string, 11 > Didl::CLASS_NAMES = {
+"object.container.storageFolder", "object.item.audioItem.musicTrack", "object.item.movie",
+"object.container.series", "object.item.photo", "object.item" /*ebook*/, "object.item",
+"object.container.album.musicAlbum", "object.item.photo", "object.item.movie",
+"object.container" };
+
+const std::array< data::NodeType::Enum, 4 > Didl::CLASS_CONTAINER = {
+data::NodeType::Enum::album, data::NodeType::Enum::artist, data::NodeType::Enum::folder,
+data::NodeType::Enum::serie };
+
 Didl::Didl( data::redis_ptr redis, config_t config ) : redis_(redis), config_(config), result_( 0 ) {
     root_node_ = element<rapidxml_ns::xml_node<>>( &doc_, &doc_, DIDL_ROOT_NODE, "" );
     attr( &doc_, root_node_, "xmlns", XML_NS_DIDL );
@@ -16,68 +26,45 @@ Didl::Didl( data::redis_ptr redis, config_t config ) : redis_(redis), config_(co
 
 void Didl::write( const std::string& key, const std::map< std::string, std::string >& values ) {
 
-    if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::folder ) {
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, DIDL_ELEMENT_CONTAINER, "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
+    data::NodeType::Enum _type = data::NodeType::parse( values.at( param::CLASS ) );
+    auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_,
+        ( std::find( CLASS_CONTAINER.begin(), CLASS_CONTAINER.end(), _type ) != CLASS_CONTAINER.end() ? DIDL_ELEMENT_CONTAINER : DIDL_ELEMENT_ITEM ), "" );
+    attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
+    attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( param::PARENT ) );
+    attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
+    attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.storageFolder" );
-        ++result_;
+    element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( param::NAME ) );
+    element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", CLASS_NAMES.at( _type ) );
 
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::serie ) {
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, DIDL_ELEMENT_CONTAINER, "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
+    if( values.find( param::YEAR ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:data", values.at( param::YEAR ) ); }
+    if( values.find( param::ARTIST ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:artist", values.at( param::ARTIST ) ); }
+    if( values.find( param::TRACK ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:originalTrackNumber", values.at( param::TRACK ) ); }
+    if( values.find( param::ALBUM ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:album", values.at( param::ALBUM ) ); }
+    if( values.find( param::COMMENT ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:description", values.at( param::COMMENT ) ); }
+    if( values.find( param::YEAR ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:date", values.at( param::YEAR ) ); }
+    if( values.find( param::GENRE ) != values.end() )
+    { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:genre", values.at( param::GENRE ) ); }
 
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.series" );
+    if( values.find( param::THUMB ) != values.end() ) {
+        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
+            fmt::format( "{0}{1}", config_->cds_uri, values.at( param::THUMB ) ) );
+        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
+    }
+//    if( _type == data::NodeType::Enum::audio && _type == data::NodeType::Enum::album ) {
+//        const std::string _size ( _type == data::NodeType::Enum::audio ? "med" : "tn" );
+//        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
+//            fmt::format( "{0}/img/{1}_{2}.jpg", config_->cds_uri, _size, key ) );
+//        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
+//    }
 
-        if( values.find( "year" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:data", values.at( "year" ) ); }
-
-        if( values.find( "thumb" ) != values.end() ) {
-            auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI", values.at( "thumb" ) );
-            attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
-        }
-        ++result_;
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::album ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, DIDL_ELEMENT_CONTAINER, "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::TYPE_ALBUM ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.container.album.musicAlbum" );
-
-        //get the artists
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:artist", values.at( "artist" ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:data", values.at( "year" ) );
-
-        if( values.find( "thumb" ) != values.end() ) {
-            auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI", fmt::format( "{0}{1}", config_->cds_uri, values.at( "thumb" ) ) );
-            attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
-        }
-        ++result_;
-
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::file ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item" );
-
+    if( _type == data::NodeType::Enum::file ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
 
@@ -87,36 +74,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         { attr( &doc_, _res_n, "size", values.at( "size" ) ); }
         if( values.find( "mimeType" ) != values.end() )
         { attr( &doc_, _res_n, "mime-type", values.at( "mimeType" ) ); }
-        ++result_;
-
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::audio ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.audioItem.musicTrack" );
-
-        if( values.find( "track" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:originalTrackNumber", values.at( "track" ) ); }
-        if( values.find( "album" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:album", values.at( "album" ) ); }
-        if( values.find( "comment" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:description", values.at( "comment" ) ); }
-        if( values.find( "artist" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:artist", values.at( "artist" ) ); }
-        if( values.find( "year" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:date", values.at( "year" ) ); }
-        if( values.find( "genre" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:genre", values.at( "genre" ) ); }
-
-        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
-            fmt::format( "{0}{1}", config_->cds_uri, data::get( redis_, values.at( data::KEY_PARENT ), "thumb" ) ) );
-        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
-
+    } else if( _type == data::NodeType::Enum::audio ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
 
@@ -136,28 +94,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         { attr( &doc_, _res_n, "sampleFrequency", values.at( "samplerate" ) ); }
         if( values.find( "channels" ) != values.end() )
         { attr( &doc_, _res_n, "nrAudioChannels", values.at( "channels" ) ); }
-        ++result_;
-
-////TODO        std::time_t last_playback_time_ = db::get< const char * >( statement, didl::_DidlMusicTrack::playback_time );
-////        xml_writer_->element ( item_element_, upnp::XML_NS_UPNP, "lastPlaybackTime", fmt::format("{:%Y-%m-%d %h:%m:%s}", *std::localtime( &last_playback_time_ ) ) );
-//        xml_writer_->element ( item_element_, upnp::XML_NS_UPNP, "playbackCount", std::to_string( db::get< int >( statement, didl::DidlMusicTrack::playback_count ) ) );
-//        xml_writer_->element ( item_element_, upnp::XML_NS_UPNP, "rating", std::to_string( db::get< int >( statement, didl::DidlMusicTrack::rating ) ) );
-
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::image ||
-               data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::cover ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.photo" );
-
-        if( values.find( "track" ) != values.end() )
-        { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:originalTrackNumber", values.at( "track" ) ); }
-
+    } else if ( _type == data::NodeType::Enum::image || _type == data::NodeType::Enum::cover ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
 
@@ -172,19 +109,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
         if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
         { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }
-        ++result_;
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::movie ||
-               data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::episode ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( data::KEY_NAME ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.movie" );
-
+    } else if( _type == data::NodeType::movie ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
 
@@ -204,19 +129,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
         if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
         { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }
-        ++result_;
-
-    } else if( data::NodeType::parse( values.at( data::KEY_CLASS ) ) == data::NodeType::Enum::episode ) {
-
-        auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_, "item", "" );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( data::KEY_PARENT ) );
-        attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
-
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title",
-            fmt::format( "S{}E{} {}", values.at( data::TYPE_SERIE ), values.at( data::TYPE_EPISODE ), values.at( data::KEY_NAME ) ) );
-        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", "object.item.movie" );
-
+    } else if( _type == data::NodeType::movie ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
             config_->cds_uri, key, values.at( "ext" ) ) );
 
@@ -236,10 +149,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
         if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
         { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }
-        ++result_;
-
-    } else {
-        SPDLOG_DEBUG( spdlog::get( LOGGER ), "class not found: {0}", values.at( data::KEY_CLASS ) );
     }
+    ++result_;
 }
 }//namespace upnp

@@ -30,6 +30,9 @@ public:
     /** @brief number of objects written to xml */
     int count() const { return result_; }
 private:
+    static const std::array< std::string, 11 > CLASS_NAMES;
+    static const std::array< data::NodeType::Enum, 4 > CLASS_CONTAINER;
+
     data::redis_ptr redis_;
     config_t config_;
     int result_;

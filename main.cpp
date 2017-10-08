@@ -26,6 +26,7 @@ static const char* PARAM_MULTICAST_PORT = "multicast-port";
 static const char* PARAM_HTTP_PORT = "http-port";
 static const char* PARAM_CDS_URI = "cds";
 static const char* PARAM_REDIS = "redis";
+static const char* PARAM_REDIS_PORT = "redis-port";
 
 struct Container {
     upnp::config_t config = std::make_shared< upnp::Config >();
@@ -48,9 +49,10 @@ int main( int argc, char* argv[] ) {
         ( PARAM_HTTP_PORT, "API Webserver IP port to bind to.", cxxopts::value<std::string>(), "PORT" )
         ( PARAM_MULTICAST_ADDRESS, "SSDP multicast IP-Adress to bind to.", cxxopts::value<std::string>(), "IP" )
         ( PARAM_MULTICAST_PORT, "SSDP multicast port to bind to.", cxxopts::value<std::string>(), "PORT" )
-        ( data::KEY_NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "UUID" )
+        ( param::NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "UUID" )
         ( PARAM_CDS_URI, "CDS uri.", cxxopts::value<std::string>(), "URI" )
         ( PARAM_REDIS, "Redis Database (default: localhost)", cxxopts::value<std::string>()->default_value("localhost"), "HOST" )
+        ( PARAM_REDIS_PORT, "Redis Database port (default: 6379)", cxxopts::value<std::string>()->default_value("6379"), "PORT" )
         ( "help", "Print help")
       ;
     options.parse(argc, argv);
@@ -63,7 +65,8 @@ int main( int argc, char* argv[] ) {
     Container _container;
 
     auto& _redis_server = options[PARAM_REDIS].as<std::string>();
-    _container.redox = data::make_connection( _redis_server, 6379 );
+    auto& _redis_port = options[PARAM_REDIS_PORT].as<std::string>();
+    _container.redox = data::make_connection( _redis_server, std::stoi( _redis_port ) );
     //load config from database
     if( data::config_exists( _container.redox ) ) {
         _container.config = upnp::json( data::config( _container.redox ) );
@@ -77,8 +80,8 @@ int main( int argc, char* argv[] ) {
     { _container.config->multicast_port = options[PARAM_MULTICAST_PORT].as<std::string>(); }
     if ( options.count( PARAM_LISTEN_ADDRESS ) )
     { _container.config->listen_address = options[PARAM_LISTEN_ADDRESS].as<std::string>(); }
-    if ( options.count( data::KEY_NAME ) )
-    { _container.config->name = options[data::KEY_NAME].as<std::string>(); }
+    if ( options.count( param::NAME ) )
+    { _container.config->name = options[param::NAME].as<std::string>(); }
     if ( options.count( PARAM_CDS_URI ) )
     { _container.config->cds_uri = options[PARAM_CDS_URI].as<std::string>(); }
 
@@ -101,7 +104,7 @@ int main( int argc, char* argv[] ) {
                   _container.config->multicast_address, _container.config->multicast_port );
 
     /* Setup and start the server **/
-    _container.server = std::make_shared< upnp::Server >( _redis_server, 6379 );
+    _container.server = std::make_shared< upnp::Server >( _redis_server, std::stoi( _redis_port ) );
 
     _container.www = std::shared_ptr< http::Server< http::HttpServer > >(
         new http::Server< http::HttpServer >( _container.config->listen_address, _container.config->http_port ) );
