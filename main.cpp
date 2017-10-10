@@ -141,6 +141,16 @@ int main( int argc, char* argv[] ) {
         http::mod::Exec( std::bind( &upnp::Server::cms, _container.server, _1, _2 ) ),
         http::mod::Http() );
 
+#ifdef DEBUG
+    _container.www->bind( http::mod::Match<>( ".*" ),
+        http::mod::Exec( [&_container](http::Request& request, http::Response& response ) -> http::http_status {
+        spdlog::get ( "upnp" )->warn ( "HTTP 404: {}", request.uri() );
+            return http::http_status::NOT_FOUND;
+        }),
+        http::mod::Http()
+    );
+#endif
+
     //create ssdp server
     _container.ssdp = std::make_shared< upnp::SSDPServerImpl >( _container.config, _namespaces );
     _container.ssdp->announce();

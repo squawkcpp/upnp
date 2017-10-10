@@ -1,0 +1,43 @@
+sudo: required
+language: cpp
+services:
+  - docker
+env:
+  global:
+    - secure: "PI51PIbYZcLyqgSa0j1Q5+WmKFlV8Q0FxL+7uMvCUN564tdhhOtV/rGP5pSCjwIRHQwfY5fj8rZ4QYFPAWwnOQS9RoCUVGFz7u+6c8UbHS+AxqQLGfY+pkvHJ7a9XXScvXUJ73Iu2HcOS6gxgk9KbKihm+zpIKfia0kr4lresTZiBpK2t5T1yMWCfMIxisWGM8Wesin7A+/jQj3MdOz86++Evzkn+YQncgkBD4rXvDIJB9uO8SSKU2kr5MYi54OI+AvLcHm3xx3l3uW6l7rnhif7DC43V4dkfoqknMgAibOGI/Wv5qA0Z+xNh9qpKY4qzTTOt7OwOFSvy6CDd5tLjtmJgP8tetTV6jTw0t4/+IPDrqnRgc/vFDGS761OlWbMlMeCMdPKCrNGFo6/Sw5k+h9wKqs8NaLbnV699OlhcaeQiatOU2plwvZAcUKLMgpSq74joWHohDXjO1GC+OBLBAO6v7hHAiyW2eyIl8MMLMB1i4O9mjnrH/SGMn5ui7JluDZu38EcQsDidbcKajzy3Xxu5slqXzjO/8XuBjE+OOVA2eStxFGZNPDPC1NWzHFmr8I9sETSUu6Mr+EUQSlO1R6keu0BKlHGhkxlRfuK4/inRJ6AqetdjmQepKb1+Tu7M3cu8Wcf1Rakt0/XBd8WK87qmXRZpLbPcVL4z15DekQ=" # DOCKER_EMAIL
+    - secure: "gDDhrr/Ibkx6ETuyRSJOBnhi3h9dogsNKcKMj7a9MoVgDmk19XdDVbUjNzxIMPRZ3vsCLZUTld6NZmsxg/CHWczD1ZDJa1oGhPpeJgxIYG0yjH2Th04Twl86FfXgWoPXWL6oo1rSJVOu6EjPubSaV4WHcL/SAvlRvlnBvBidZ/39yLhaqBjqhFHM80bpo4j7zvqMPlGzsrjFCJkrKl+TtwBroISohu5c7aypiX+mBbXtpraJE1rH9qTDd7Vwr1RAmRJ/emDNfbLKbyj7pV0RUQPp2wAgNNoSW/hIjGEJ8pFHFVfTADJr6wZ955VOSspMMoHG1DgxsbdUdX39GlBfbuO0sJeYszfbBkcVKs07H2XgyO6kFfxM3JeeA5DBX27bsk+IzZxely3xi4Dyhvf4LQmaHNuF/K7gs0nqFq7GTmBSBOdwFWa1EtznRlD+csZeLkjknMwpPmrKQLuquF08CcMRivrNJzlBQQnoy78Pthkyb9+wRCHaanInxlTFn6Bb2//ZuY1jbXAnWiLIhEUKG0+Da8gSfbKOzcbeeHt69hiWXFKUgR6OexdRB8xexw2gJ+SHuegZh+OUpyRs7NxEn4FDIe1ycv1pJvLJhR8g50OZM9/NAHpgGf83E/Fe5FmguCyBzkuKgyAvMjvgtFuI6Wibuor3DaqhqpL9hXMVI1M=" # DOCKER_USER
+    - secure: "YZsjKNCh4z3rfZ4kwbFDNJqE0txSnFde1oSmmb7a2dJpPC0HLZzGd5FasSxLL8v2wU2QKeHe6obDhbc8VVKqDSz6KtGs28EojfyYnAoLimEGtK5pdThNrb4AFtBqm3aVc8b0sZBgyFxV8mxlrDHlKjzuBrjIvrnCcXVJccypZch56ds7ibWZabXzCE/HXSgGz2Yf7KXhha1Hw2lbho/8haVnP4yrILV2fhRtC2T6MyamhrXlQVZSY6poFhZUT9fB4LPDVv2FuGlgokZ8U8U9Jk+xM691YRvJzHEt0y0OObpLCmO67wDN/S1cbQEu4hdDXoKgiVe0YLCj7kuEh1A4BgIZPGe1hRbEPx9aVpZEutSdKgVlVnj8KrtY3KKaIcmS+1zo6I3qtcapFTrsNFzBiawEOKOoRToojfAEY6IM6WgpCg3CbhOGuTjBF46z76nFkTzciMa88lJ8GIXKkuIE3rr58OVmwOdYIb0oYmSj0oAzx9rM7o2/ubvfai9HkjuKcCq2rcLaK4C24oLXGpT+h6uU1CV1KEEd8/grxYGypHY/zubAGy/tGOLyJB+kM/CAcgL3Y2x/ANgkQLejSXfnDCPcFh7M8eCg+8/NnEVPv8gWxA6HsDeR/nMC3GYeL+9HzMo1FmNO7hVAmO/jJg6zz1DmrVlBf2vuOSeMJx2Z2nI=" # DOCKER_PASS
+    - COMMIT=${TRAVIS_COMMIT::8}
+before_install:
+  - mkdir $(pwd)/build
+  - docker pull spielhuus/buildimage:latest
+  - sudo docker run -itd --name build -v $(pwd)/upnp:/repo -v $(pwd)/build:/build spielhuus/buildimage
+  - sudo docker exec build apt-get -y update
+  - sudo docker exec build apt-get -y install libboost-all-dev libpcre++-dev libcurl4-openssl-dev libcurlpp-dev libzmq-dev libssl-dev uuid-dev libhiredis-dev libev-dev
+  - sudo docker exec build git clone https://github.com/squawkcpp/upnp.git /repo
+script:
+  - sudo docker exec build cmake -H/repo -B/build
+  - sudo docker exec build cmake --build /build
+  - sudo docker exec build /build/test_upnp
+  - sudo docker exec build cmake --build /build --target package
+
+deploy:
+  provider: releases
+  api_key:
+    secure: "PkcR+VgR0PzvGC+hc3SJPvUPjpV1juZAzMYOGi+Ez9Rgwuf06a5RAOHPnWwJ230ocEqGV6HQW/scufSZpahTpvB4e28nzoJSBcdmjWhNmy3NzENeseu6NgzhwJXtkfFYhMpoBTtT0E295CIvjY7PwvWG3oxhuzIfmMBHobKkGjJc8rQfGqhlzrYpja59luX4CqKVFasBRRGyeMaQ/zM6Ng9AKz23XwBUF7esyqwjPxbqFwrAgnn1ZL/PosCb2yb8GVuRl5/J0mSfLUxAeJ+T5z9Z4FLyeSWdzrKvNwFiOrPUAR/rC0hFqgYJOO7Bgf6wmF9uCLv6pfc/l/l9Y3FgERfDn8P3ijoixv9cQm8LkL2H1ysf0e+l/d0MlahZ2YMr5rZWKk29jZdBto7ceA0USXh4Ql+lsJHci4Yt9wm5RAZXn1fJKRMeahKIxwCuAIpDMGeTWnSmc42Y3meoAtIZNi8O481FGSo6n6xSOccMxqhnjZE+NGjvPOFSBZgy4Da0WnHZoSALFfDQGvExVEVPYTurltTlLNUUsPQk1W6qFPEMpDNZ0x77lIx0uhEWgj8gaIlHt00KhEAyUIWOAQm9WIqipyy/MmXN9SwdaQdwIxWBadGh4hft1zx6cBoyuBv51Bz5bdbldoKicrExMYqWmGveJdCzTFDCqmg3gC+HpEs="
+  file: '$(pwd)/build/upnp_@UPNP_TAG_VERSION@.deb'
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
+    repo: squawkcpp/upnp
+
+after_success:
+  - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - export REPO=squawkcpp/upnp
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
+  - sudo docker build -f Dockerfile -t $REPO:$COMMIT .
+  - sudo docker tag $REPO:$COMMIT $REPO:$TAG
+  - sudo docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - sudo docker push $REPO
+

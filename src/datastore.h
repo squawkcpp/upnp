@@ -122,13 +122,13 @@ static const std::vector< std::string > __NAMES = std::vector< std::string> (
 { param::FOLDER, param::AUDIO, param::MOVIE, param::SERIE, param::IMAGE, param::EBOOK,
   param::FILE, param::ALBUM, param::COVER, param::EPISODE, param::ARTIST } );
 static const std::array< std::map< std::string, std::string >, 7 > menu ( {{
-        { {param::NAME, "Music Albums"},  {key::TYPE, param::ALBUM} },
-        { {param::NAME, "Music Artists"}, {key::TYPE, param::ARTIST} },
-        { {param::NAME, "Photos"},        {key::TYPE, param::IMAGE} },
-        { {param::NAME, "Movies"},        {key::TYPE, param::MOVIE} },
-        { {param::NAME, "TV Series"},     {key::TYPE, param::SERIE} },
-        { {param::NAME, "eBooks"},        {key::TYPE, param::EBOOK} },
-        { {param::NAME, "Storage"},       {key::TYPE, param::FILE } }
+        { {param::NAME, "Albums"},  {key::TYPE, param::ALBUM} },
+        { {param::NAME, "Artists"}, {key::TYPE, param::ARTIST} },
+        { {param::NAME, "Photos"},  {key::TYPE, param::IMAGE} },
+        { {param::NAME, "Movies"},  {key::TYPE, param::MOVIE} },
+        { {param::NAME, "Series"},  {key::TYPE, param::SERIE} },
+        { {param::NAME, "eBooks"},  {key::TYPE, param::EBOOK} },
+        { {param::NAME, "Storage"}, {key::TYPE, param::FILE } }
 }});
 }
 ///@endcond DOC_INTERNAL
@@ -164,7 +164,7 @@ public:
     enum Enum { folder = 0, audio = 1, movie = 2, serie = 3, image = 4, ebook = 5, file = 6, album = 7, cover = 8, episode = 9, artist = 10 };
 
     /** @brief node type as string.  */
-    static std::string str ( Enum type ) {
+    static std::string str ( const Enum type ) {
         return _internal::__NAMES.at ( type );
     }
 
@@ -236,7 +236,7 @@ static std::string make_key (
 
 /** @brief make node key */
 static std::string make_key_node ( const std::string& key /** @param key node key. */ ) {
-    return make_key ( key::FS, key ); /** TODO add node */
+    return make_key ( key::FS, key, "node" ); /** TODO add node */
 }
 /** @brief make type list key (fs:KEY:TYPE (SET:KEY) ) */
 static std::string make_key_list ( const std::string& key /** @param key node key. */ ) {
@@ -314,11 +314,15 @@ static void children( redis_ptr redis /** @param redis redis database pointer. *
                       async_fn fn /** @param fn the callback function. */ ) {
 
     //TODO sort and filter
+
+
     command_t _redis_command;
-    if( sort == "default" ) {
+    if( !filter.empty() ) {
+        _redis_command = { "FT.SEARCH", "idx", filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count ) };
+    } else if( sort == "default" ) {
         _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count ) };
     } else {
-        _redis_command ={ redis::LRANGE, make_key( make_key_list( key ), sort, order ), std::to_string( index ), std::to_string( index + count ) };
+        _redis_command ={ redis::LRANGE, make_key( make_key_list( key ), "sort", sort, order ), std::to_string( index ), std::to_string( index + count ) };
     }
     redox::Command< std::vector< std::string > >& _c = redis->commandSync< std::vector< std::string > >( _redis_command );
     if( _c.ok() ) {
@@ -403,8 +407,11 @@ static void rem_nodes( redis_ptr redis, NodeType::Enum type, const std::string& 
 { redis->command( {redis::ZREM,  data::make_key_list( type ), key } ); }
 
 /** @brief add node to global nodes list */
-static void add_nodes( redis_ptr redis, const std::string& parent, NodeType::Enum type, const std::string& key, unsigned long score )
+static void add_nodes( redis_ptr redis, const std::string& parent, const NodeType::Enum type, const std::string& key, unsigned long score )
 { redis->command( {redis::ZADD,  data::make_key( key::FS, parent, "types", NodeType::str( type ) ), std::to_string( score ), key } ); }
+/** @brief remove node from global nodes list */
+static void rem_nodes( redis_ptr redis, const std::string& parent, const NodeType::Enum type, const std::string& key )
+{ redis->command( {redis::ZREM,  data::make_key( key::FS, parent, "types", NodeType::str( type ) ), key } ); }
 
 // -----------------------------------------------------------------------------------------------------------
 // --------------------------                      mime type                        --------------------------

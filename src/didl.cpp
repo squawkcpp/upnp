@@ -52,17 +52,15 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
     if( values.find( param::GENRE ) != values.end() )
     { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:genre", values.at( param::GENRE ) ); }
 
-    if( values.find( param::THUMB ) != values.end() ) {
+    if( _type == data::NodeType::Enum::audio && _type == data::NodeType::Enum::album ) {
+        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
+            fmt::format( "{0}/img/{1}_{2}.jpg", config_->cds_uri, "med", key ) );
+        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
+    } else if( values.find( param::THUMB ) != values.end() ) {
         auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
             fmt::format( "{0}{1}", config_->cds_uri, values.at( param::THUMB ) ) );
         attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
     }
-//    if( _type == data::NodeType::Enum::audio && _type == data::NodeType::Enum::album ) {
-//        const std::string _size ( _type == data::NodeType::Enum::audio ? "med" : "tn" );
-//        auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
-//            fmt::format( "{0}/img/{1}_{2}.jpg", config_->cds_uri, _size, key ) );
-//        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
-//    }
 
     if( _type == data::NodeType::Enum::file ) {
         auto _res_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "res", fmt::format( "{0}/res/{1}{2}",
