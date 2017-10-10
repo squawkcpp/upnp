@@ -1,7 +1,7 @@
 # -------------------------------------------------------------------------
 # Build UPNP server
 # -------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
 project( upnp )
 
@@ -65,6 +65,11 @@ find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Hiredis)
 find_package(Libev)
+
+SET( INCLUDES ${INCLUDES}
+    ${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
+    ${FLAC++_INCLUDE_DIR}
+)
 
 SET( LIBS ${LIBS}
     ${Boost_LIBRARIES} ${CURL_LIBRARIES}

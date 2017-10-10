@@ -14,7 +14,7 @@ before_install:
   - sudo docker run -itd --name build -v $(pwd)/upnp:/repo -v $(pwd)/build:/build spielhuus/buildimage
   - sudo docker exec build apt-get -y update
   - sudo docker exec build apt-get -y install libboost-all-dev libpcre++-dev libcurl4-openssl-dev libcurlpp-dev libzmq-dev libssl-dev uuid-dev libhiredis-dev libev-dev
-  - sudo docker exec build git clone https://github.com/squawkcpp/upnp.git /repo
+- sudo docker exec build git clone https://github.com/squawkcpp/upnp.git /repo
 script:
   - sudo docker exec build cmake -H/repo -B/build
   - sudo docker exec build cmake --build /build
