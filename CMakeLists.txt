@@ -77,7 +77,6 @@ SET( LIBS ${LIBS}
     -lpthread -luuid -lm -lz
 )
 
-
 #add headers for editor
 FILE(GLOB_RECURSE HeaderFiles "${PROJECT_SOURCE_DIR}/src/*.h")
 add_custom_target(upnp_headers SOURCES ${HeaderFiles})
