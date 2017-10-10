@@ -83,7 +83,7 @@ add_custom_target(upnp_headers SOURCES ${HeaderFiles})
 aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
 include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
 add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
-target_link_libraries(upnp re2 lightning redox fmt spdlog rapidjson ${LIBS})
+target_link_libraries(upnp re2 lightning redox fmt spdlog asio rapidjson rapidxml ${LIBS})
 
 # -------------------------------------------------------------------------
 # -----------------------   Manage Test Cases       -----------------------
@@ -93,7 +93,7 @@ if (build_tests)
     enable_testing()
     include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
     add_executable(test_upnp ${UPNP_SOURCES_TEST} ${UPNP_SOURCES})
-    target_link_libraries(test_upnp ${GTEST_MAIN_PATH} re2 lightning redox fmt spdlog rapidjson gtest ${LIBS})
+    target_link_libraries(test_upnp ${GTEST_MAIN_PATH} re2 lightning redox fmt spdlog asio rapidjson rapidxml gtest ${LIBS})
     add_test(upnp-tests test_upnp)
 endif()
 
