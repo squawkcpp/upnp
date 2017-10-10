@@ -88,7 +88,7 @@ add_custom_target(upnp_headers SOURCES ${HeaderFiles})
 aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
 include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
 add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
-target_link_libraries(upnp re2 lightning redox fmt spdlog asio rapidjson rapidxml ${LIBS})
+target_link_libraries(upnp cxxopts re2 lightning redox fmt spdlog asio rapidjson rapidxml ${LIBS})
 install(TARGETS upnp RUNTIME DESTINATION bin)
 
 # -------------------------------------------------------------------------

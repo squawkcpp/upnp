@@ -1,8 +1,7 @@
 # Dockerfile to install upnp server (UPNP)
 FROM ubuntu:xenial
 
-RUN apt-get -y update \
-&& apt-get install -y wget
+RUN apt-get -y update
 
 ADD build/upnp_0.1.1.deb /upnp_0.1.1.deb
 
@@ -13,6 +12,6 @@ RUN apt-get install -y libpcrecpp0v5 libimlib2 libavcodec-ffmpeg56 libavformat-f
 ADD script/upnp.sh /upnp.sh
 RUN chmod +x /*.sh
 
-EXPOSE 8000
+EXPOSE 9003
 
 CMD ["/upnp.sh"]
