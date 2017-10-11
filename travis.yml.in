@@ -29,11 +29,11 @@ deploy:
   on:
     tags: true
     all_branches: true
-    repo: squawk/upnp
+    repo: squawkcpp/upnp
 
 after_success:
   - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
-  - export REPO=squawkcpp/upnp
+  - export REPO=squawk/upnp
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
   - sudo docker build -f Dockerfile -t $REPO:$COMMIT .
   - sudo docker tag $REPO:$COMMIT $REPO:$TAG
