@@ -100,8 +100,12 @@ int main( int argc, char* argv[] ) {
     /* setup logger */
     spdlog::set_level(spdlog::level::trace);
     auto console = spdlog::stdout_color_mt(upnp::LOGGER);
-    console->info( "Start UPNP server ({}:{}/{}:{})", _container.config->listen_address, _container.config->http_port,
-                  _container.config->multicast_address, _container.config->multicast_port );
+
+    console->info( "Start {}: (listen:{}:{}, ssdp:{}:{}, redis:{}:{}, cds:{})", _container.config->name,
+                   _container.config->listen_address, _container.config->http_port,
+                   _container.config->multicast_address, _container.config->multicast_port,
+                   _redis_server, _redis_port, _container.config->multicast_address
+    );
 
     /* Setup and start the server **/
     _container.server = std::make_shared< upnp::Server >( _redis_server, std::stoi( _redis_port ) );
