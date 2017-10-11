@@ -15,7 +15,7 @@ before_install:
   - sudo docker exec build apt-get -y install libsdl2-dev libboost-all-dev libao-dev libimlib2-dev libsqlite3-dev libxml++-dev libpcre++-dev libxml2-dev libmp3lame-dev libflac++-dev libpoppler-cpp-dev libcurl4-openssl-dev libcurlpp-dev libzmq-dev libsigc++-2.0-dev libssl-dev libarchive-dev uuid-dev libhiredis-dev libev-dev libmagic-dev libopencv-dev libmusicbrainz5-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavresample-dev libavcodec-extra
   - sudo docker exec build git clone https://github.com/squawkcpp/upnp.git /repo
 script:
-  - sudo docker exec build cmake -H/repo -B/build -DCDS_TAG_VERSION=$TRAVIS_BRANCH
+  - sudo docker exec build cmake -H/repo -B/build -DUPNP_TAG_VERSION=$TRAVIS_BRANCH
   - sudo docker exec build cmake --build /build
   - sudo docker exec build /build/test_upnp
   - sudo docker exec build cmake --build /build --target package
