@@ -11,7 +11,7 @@ RUN apt-get install -y libpcrecpp0v5 libimlib2 libavcodec-ffmpeg56 libavformat-f
         libcurl3 libhiredis0.13 libev4 libmagic1 libopencv-highgui2.4v5 \
 && dpkg -i /upnp_$UPNP_TAG_VERSION.deb
 
-ADD script/upnp.sh /upnp.sh
+ADD docker/upnp.sh /upnp.sh
 RUN chmod +x /*.sh
 
 EXPOSE 9003
