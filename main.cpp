@@ -49,7 +49,7 @@ int main( int argc, char* argv[] ) {
         ( PARAM_HTTP_PORT, "API Webserver IP port to bind to.", cxxopts::value<std::string>(), "PORT" )
         ( PARAM_MULTICAST_ADDRESS, "SSDP multicast IP-Adress to bind to.", cxxopts::value<std::string>(), "IP" )
         ( PARAM_MULTICAST_PORT, "SSDP multicast port to bind to.", cxxopts::value<std::string>(), "PORT" )
-        ( param::NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "UUID" )
+        ( param::NAME, "Server display name (default: empty)).", cxxopts::value<std::string>(), "NAME" )
         ( PARAM_CDS_URI, "CDS uri.", cxxopts::value<std::string>(), "URI" )
         ( PARAM_REDIS, "Redis Database (default: localhost)", cxxopts::value<std::string>()->default_value("localhost"), "HOST" )
         ( PARAM_REDIS_PORT, "Redis Database port (default: 6379)", cxxopts::value<std::string>()->default_value("6379"), "PORT" )
