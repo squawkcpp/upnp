@@ -29,7 +29,7 @@ deploy:
   on:
     tags: true
     all_branches: true
-    repo: squawkcpp/upnp
+    repo: squawk/upnp
 
 after_success:
   - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
