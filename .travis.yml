@@ -15,7 +15,7 @@ before_install:
   - sudo docker exec build apt-get -y install libsdl2-dev libboost-all-dev libao-dev libimlib2-dev libsqlite3-dev libxml++-dev libpcre++-dev libxml2-dev libmp3lame-dev libflac++-dev libpoppler-cpp-dev libcurl4-openssl-dev libcurlpp-dev libzmq-dev libsigc++-2.0-dev libssl-dev libarchive-dev uuid-dev libhiredis-dev libev-dev libmagic-dev libopencv-dev libmusicbrainz5-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavresample-dev libavcodec-extra
   - sudo docker exec build git clone https://github.com/squawkcpp/upnp.git /repo
 script:
-  - sudo docker exec build cmake -H/repo -B/build
+  - sudo docker exec build cmake -H/repo -B/build -DCDS_TAG_VERSION=$TRAVIS_BRANCH
   - sudo docker exec build cmake --build /build
   - sudo docker exec build /build/test_upnp
   - sudo docker exec build cmake --build /build --target package
@@ -24,7 +24,7 @@ deploy:
   provider: releases
   api_key:
     secure: "PkcR+VgR0PzvGC+hc3SJPvUPjpV1juZAzMYOGi+Ez9Rgwuf06a5RAOHPnWwJ230ocEqGV6HQW/scufSZpahTpvB4e28nzoJSBcdmjWhNmy3NzENeseu6NgzhwJXtkfFYhMpoBTtT0E295CIvjY7PwvWG3oxhuzIfmMBHobKkGjJc8rQfGqhlzrYpja59luX4CqKVFasBRRGyeMaQ/zM6Ng9AKz23XwBUF7esyqwjPxbqFwrAgnn1ZL/PosCb2yb8GVuRl5/J0mSfLUxAeJ+T5z9Z4FLyeSWdzrKvNwFiOrPUAR/rC0hFqgYJOO7Bgf6wmF9uCLv6pfc/l/l9Y3FgERfDn8P3ijoixv9cQm8LkL2H1ysf0e+l/d0MlahZ2YMr5rZWKk29jZdBto7ceA0USXh4Ql+lsJHci4Yt9wm5RAZXn1fJKRMeahKIxwCuAIpDMGeTWnSmc42Y3meoAtIZNi8O481FGSo6n6xSOccMxqhnjZE+NGjvPOFSBZgy4Da0WnHZoSALFfDQGvExVEVPYTurltTlLNUUsPQk1W6qFPEMpDNZ0x77lIx0uhEWgj8gaIlHt00KhEAyUIWOAQm9WIqipyy/MmXN9SwdaQdwIxWBadGh4hft1zx6cBoyuBv51Bz5bdbldoKicrExMYqWmGveJdCzTFDCqmg3gC+HpEs="
-  file: '$(pwd)/build/upnp_0.1.1.deb'
+  file: '$(pwd)/build/upnp_$TRAVIS_BRANCH.deb'
   skip_cleanup: true
   on:
     tags: true
@@ -35,7 +35,7 @@ after_success:
   - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=squawk/upnp
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
-  - sudo docker build -f Dockerfile -t $REPO:$COMMIT .
+  - sudo docker build -f docker/Dockerfile --build-arg CDS_TAG_VERSION=$TRAVIS_BRANCH -t $REPO:$COMMIT .
   - sudo docker tag $REPO:$COMMIT $REPO:$TAG
   - sudo docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
   - sudo docker push $REPO
