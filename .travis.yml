@@ -35,7 +35,7 @@ after_success:
   - sudo docker login -u $DOCKER_USER -p $DOCKER_PASS
   - export REPO=squawk/upnp
   - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
-  - sudo docker build -f docker/Dockerfile --build-arg CDS_TAG_VERSION=$TRAVIS_BRANCH -t $REPO:$COMMIT .
+  - sudo docker build -f docker/Dockerfile --build-arg UPNP_TAG_VERSION=$TRAVIS_BRANCH -t $REPO:$COMMIT .
   - sudo docker tag $REPO:$COMMIT $REPO:$TAG
   - sudo docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
   - sudo docker push $REPO
