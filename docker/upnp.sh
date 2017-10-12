@@ -21,7 +21,7 @@ if [ -n "$MULTICAST_PORT" ]; then
 fi
 
 if [ -n "$NAME" ]; then
-    OPTIONS="$OPTIONS --name$NAME"
+    OPTIONS="$OPTIONS --name $NAME"
 fi
 
 if [ -n "$CDS_URI" ]; then
