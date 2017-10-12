@@ -104,7 +104,7 @@ int main( int argc, char* argv[] ) {
     console->info( "Start {}: (listen:{}:{}, ssdp:{}:{}, redis:{}:{}, cds:{})", _container.config->name,
                    _container.config->listen_address, _container.config->http_port,
                    _container.config->multicast_address, _container.config->multicast_port,
-                   _redis_server, _redis_port, _container.config->multicast_address
+                   _redis_server, _redis_port, _container.config->cds_uri
     );
 
     /* Setup and start the server **/

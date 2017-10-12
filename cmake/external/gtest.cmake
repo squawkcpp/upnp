@@ -7,6 +7,7 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
   BUILD_BYPRODUCTS "googletest-prefix/src/googletest-build/googlemock/gtest/libgtest.a"
+  BUILD_BYPRODUCTS "googletest-prefix/src/googletest-build/googlemock/gtest/libgtest_main.a"
   BUILD_BYPRODUCTS "googletest-prefix/src/googletest-build/googlemock/libgmock_main.a"
   BUILD_BYPRODUCTS "googletest-prefix/src/googletest-build/googlemock/libgmock.a"
 )
