@@ -47,7 +47,7 @@ inline std::string _get_ip() {
 
 inline bool validate( std::shared_ptr< Config > config ) {
     if( config->http_port.empty() ) {
-        config->http_port = "8080";
+        config->http_port = "9003";
     } if( config->multicast_address.empty() ) {
         config->multicast_address = "239.255.255.250";
     } if(config->multicast_port.empty() ) {

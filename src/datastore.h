@@ -48,6 +48,12 @@ static const std::string ZCARD      = "ZCARD";
 static const std::string ZRANGE     = "ZRANGE";
 static const std::string ZREVRANGE  = "ZREVRANGE";
 static const std::string ZREM       = "ZREM";
+
+static const std::string FT_ADD     = "FT.ADD";
+static const std::string FT_CREATE  = "FT.CREATE";
+static const std::string FT_DROP    = "FT.DROP";
+static const std::string FT_SEARCH  = "FT.SEARCH";
+static const std::string FT_SUGGADD = "FT.SUGADD";
 }
 
 namespace param {
@@ -80,6 +86,7 @@ static const std::string IMAGE          = "image";
 static const std::string ISBN           = "isbn";
 static const std::string LANGUAGE       = "language";
 static const std::string MAKE           = "Make";
+static const std::string MED            = "med";
 static const std::string MIME_TYPE      = "mimeType";
 static const std::string MOVIE          = "movie";
 static const std::string NAME           = "name";
@@ -114,6 +121,8 @@ static const std::string MIME   = "fs:mime";
 static const std::string NEW    = "new";
 static const std::string TAG    = "tag";
 static const std::string TYPE   = "type";
+static const std::string INDEX  = "cds_index";
+static const std::string AUTO   = "autocomplete";
 }
 
 ///@cond DOC_INTERNAL
@@ -144,15 +153,14 @@ typedef std::vector< std::string > command_t;
 
 /** @brief current timestamp in millis. */
 static unsigned long time_millis() {
-    return
+    return static_cast<unsigned long>(
         std::chrono::system_clock::now().time_since_epoch() /
-        std::chrono::milliseconds(1);
+        std::chrono::milliseconds(1) );
 }
 /** @brief hash create a hash of the input string. */
 static std::string hash ( const std::string& in /** @param in string to hash. */ ) {
     static boost::hash<std::string> _hash;
-    //TODO why slash or fs?
-    if ( in == "/" || in == key::FS || is_mod ( in ) ) {
+    if ( in == "root" || is_mod ( in ) ) {
         return in;
     } else {
         return std::to_string ( _hash ( in ) );
@@ -318,7 +326,7 @@ static void children( redis_ptr redis /** @param redis redis database pointer. *
 
     command_t _redis_command;
     if( !filter.empty() ) {
-        _redis_command = { "FT.SEARCH", "idx", filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count ) };
+        _redis_command = { redis::FT_SEARCH, key::INDEX, filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count ) };
     } else if( sort == "default" ) {
         _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count ) };
     } else {
@@ -393,8 +401,8 @@ static void eval(  redis_ptr redis /** @param redis the database pointer. */,
 // -----------------------------------------------------------------------------------------------------------
 
 /** @brief add node to parents type list */
-static void add_types( redis_ptr redis, const std::string& path, const std::string& key, const unsigned long& score )
-{ redis->command( {redis::ZADD, data::make_key_list( path ), std::to_string( score ), key } ); }
+static void add_types( redis_ptr redis, const std::string& parent, const std::string& key, const unsigned long& score )
+{ redis->command( {redis::ZADD, data::make_key_list( parent ), std::to_string( score ), key } ); }
 /** @brief remove node from parents type list */
 static void rem_types( redis_ptr redis, const std::string& parent, const std::string& key )
 { redis->command( {redis::ZREM, data::make_key_list( parent ), hash( key ) } ); }

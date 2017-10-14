@@ -77,7 +77,7 @@ http::http_status Server::cds( http::Request& request, http::Response& response 
                         _didl.write( key, data::node( redis_, key ) );
                     });
                 } else {
-                    data::children( redis_, _object_id, _index, _count, "alpha" /** TODO */ , "asc", "", [this,&_didl]( const std::string& key ) {
+                    data::children( redis_, _object_id, _index, _count, "default" /** TODO */ , "asc", "", [this,&_didl]( const std::string& key ) {
                         _didl.write( key, data::node( redis_, key ) );
                     });
                 }
