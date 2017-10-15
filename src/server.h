@@ -21,14 +21,20 @@ namespace upnp {
 
 /** @brief The UPNP Command struct. */
 struct UpnpCommand {
-    enum TYPE{ NONE, BROWSE, GET_PROTOCOL_INFO };
+    enum TYPE{ NONE, BROWSE, GET_PROTOCOL_INFO, SORT_CAPABILITIES, SEARCH_CAPABILITIES, SYSTEM_UPDATE_ID,
+               CURRENT_CONNECTION_IDS, CURRENT_CONNECTION_INFO };
     TYPE type = NONE;
     std::map< std::string, std::string > values;
     static TYPE parse( const std::string& command );
     static std::string str( TYPE t ) {
         switch(t) {
             case BROWSE: return BROWSE_FLAG;
-            case GET_PROTOCOL_INFO: return BROWSE_METADATA;
+            case GET_PROTOCOL_INFO: return "GetProtocolInfo";
+            case SORT_CAPABILITIES: return "GetSortCapabilities";
+            case SEARCH_CAPABILITIES: return "GetSearchCapabilities";
+            case SYSTEM_UPDATE_ID: return "GetSystemUpdateID";
+            case CURRENT_CONNECTION_IDS: return "GetCurrentConnectionIDs";
+            case CURRENT_CONNECTION_INFO: return "GetCurrentConnectionInfo";
             default: return "(none)";
         }
     }

@@ -113,6 +113,31 @@ TEST( UpnpTest, ParseRequest3 ) {
     out << _command;
     EXPECT_EQ( std::string( response ), out.str() );
 }
+
+TEST( UpnpTest, ParseSortCapabilities ) {
+
+    const char * request = R"xml(<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSortCapabilities xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"></u:GetSortCapabilities></s:Body></s:Envelope>)xml";
+
+    upnp::UpnpCommand _command = upnp::Server::parse( request );
+    EXPECT_EQ( upnp::UpnpCommand::SORT_CAPABILITIES, _command.type );
+}
+
+TEST( UpnpTest, ParseSearchCapabilities ) {
+
+    const char * request = R"xml(<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSearchCapabilities xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"></u:GetSearchCapabilities></s:Body></s:Envelope>)xml";
+
+    upnp::UpnpCommand _command = upnp::Server::parse( request );
+    EXPECT_EQ( upnp::UpnpCommand::SEARCH_CAPABILITIES, _command.type );
+}
+
+TEST(UpnpTest, PROTOCOL_INFO) {
+
+    std::string request = "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><u:GetProtocolInfo xmlns:u=\"urn:schemas-upnp-org:service:ConnectionManager:1\"/></s:Body></s:Envelope>";
+    upnp::UpnpCommand _command = upnp::Server::parse( request );
+
+    EXPECT_EQ( upnp::UpnpCommand::GET_PROTOCOL_INFO, _command.type);
+}
+
 #define DESCRIPTION "<?xml version=\"1.0\"?>"\
     "<root xmlns=\"urn:schemas-upnp-org:device-1-0\">"\
     "<specVersion>"\

@@ -17,11 +17,23 @@
 namespace upnp {
 
 UpnpCommand::TYPE UpnpCommand::parse( const std::string& command ) {
+    //the content directory methods
     if( strcmp( command.c_str(),  "Browse" ) == 0 )
     { return BROWSE; }
+    if( strcmp( command.c_str(),  "GetSearchCapabilities" ) == 0 )
+    { return SEARCH_CAPABILITIES; }
+    if( strcmp( command.c_str(),  "GetSortCapabilities" ) == 0 )
+    { return SORT_CAPABILITIES; }
+    if( strcmp( command.c_str(),  "GetSystemUpdateID" ) == 0 )
+    { return SYSTEM_UPDATE_ID; }
+
+    //the content manager methods
+    if( strcmp( command.c_str(),  "GetCurrentConnectionIDs" ) == 0 )
+    { return CURRENT_CONNECTION_IDS; }
+    if( strcmp( command.c_str(),  "GetCurrentConnectionInfo" ) == 0 )
+    { return CURRENT_CONNECTION_INFO; }
     if( strcmp( command.c_str(),  "GetProtocolInfo" ) == 0 )
     { return GET_PROTOCOL_INFO; }
-
     return NONE;
 }
 
@@ -44,20 +56,14 @@ UpnpCommand Server::parse( const std::string& body ) {
 http::http_status Server::cds( http::Request& request, http::Response& response ) {
 
     if( request.method() == "SUBSCRIBE" ) {
-        SPDLOG_DEBUG( spdlog::get( LOGGER), "event/cds: {0}", request.str() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cds: {0}", request.str() );
 
     } else if( request.method() == "POST" ) {
         UpnpCommand _upnp_command = parse( request.str() );
-        SPDLOG_DEBUG( spdlog::get( LOGGER), _upnp_command.str() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "cds request: {}", _upnp_command.str() );
         if(_upnp_command.type == UpnpCommand::BROWSE ) {
             if ( _upnp_command.contains( BROWSE_FLAG ) &&
                  _upnp_command.get( BROWSE_FLAG ) == BROWSE_METADATA ) {
-
-    //        } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
-    //                    _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN &&
-    //                    _upnp_command.get( OBJECT_ID ) == "0" ) {
-
-    //            std::cout << "browse root nodes" << std::endl;
 
             } else if ( _upnp_command.contains( BROWSE_FLAG ) &&
                         _upnp_command.get( BROWSE_FLAG ) == BROWSE_DIRECT_CHILDREN ) {
@@ -87,24 +93,69 @@ http::http_status Server::cds( http::Request& request, http::Response& response 
             } else {
                 SPDLOG_DEBUG( spdlog::get( LOGGER ), "unknown browse request: {0}:{1}" , _upnp_command.get( BROWSE_FLAG ), _upnp_command.get( OBJECT_ID ) );
             }
-        } else if(_upnp_command.type == UpnpCommand::GET_PROTOCOL_INFO ) {
-            std::cout << "get protocol info " << std::endl;
+        } else if(_upnp_command.type == UpnpCommand::SORT_CAPABILITIES ) {
+            response << R"xml(<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSortCapabilitiesResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><SortCaps>dc:title,dc:date,upnp:class,upnp:album,upnp:originalTrackNumber</SortCaps></u:GetSortCapabilitiesResponse></s:Body></s:Envelope>)xml";
+
+        } else if(_upnp_command.type == UpnpCommand::SEARCH_CAPABILITIES ) {
+            response << R"xml(<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSearchCapabilitiesResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><SearchCaps>dc:creator,dc:date,dc:title,upnp:album,upnp:actor,upnp:artist,upnp:class,upnp:genre,@refID</SearchCaps></u:GetSearchCapabilitiesResponse></s:Body></s:Envelope>)xml";
+
         } else {
             SPDLOG_DEBUG( spdlog::get( LOGGER ), "unknown request: {0}:{1}" , _upnp_command.get( BROWSE_FLAG ), _upnp_command.get( OBJECT_ID ) );
         }
     } else {
-        SPDLOG_DEBUG( spdlog::get( LOGGER), "cds/unknown method: {0}:", request.method(), request.uri() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER), "unknown method: {0}:{1} -> {2}", request.method(), request.uri(), request.str() );
     }
     response.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type( http::mime::XML ) );
     return http::http_status::OK;
 }
 
 http::http_status Server::cms( http::Request& request, http::Response& response ) {
+    if( request.method() == "SUBSCRIBE" ) {
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cms: {0}", request.str() );
+
+    } else if( request.method() == "POST" ) {
+        UpnpCommand _upnp_command = parse( request.str() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "cms request: {}", _upnp_command.str() );
+        if( _upnp_command.type == UpnpCommand::GET_PROTOCOL_INFO ) {
+
+            rapidxml_ns::xml_document<> doc;
+
+            auto root_n = element<rapidxml_ns::xml_node<>>( &doc, &doc, "s:Envelope", "" );
+            attr( &doc, root_n, "xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/" );
+            attr( &doc, root_n, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
+            attr( &doc, root_n, "s:encodingStyle", "http://schemas.xmlsoap.org/soap/encoding/" );
+
+            auto body_n = element<rapidxml_ns::xml_node<>>( &doc, root_n, "s:Body", "" );
+            auto _browseResponse_n = element<rapidxml_ns::xml_node<>>( &doc, body_n, "u:GetProtocolInfoResponse", "" );
+            attr( &doc, _browseResponse_n, "xmlns:u", "urn:schemas-upnp-org:service:ConnectionManager:1" );
+
+            auto _source_n = element<rapidxml_ns::xml_node<>>( &doc, _browseResponse_n, "Source", "http-get:*:audio/mpeg:*,http-get:*:text/plain:*,http-get:*:video/mp4:*,http-get:*:video/mpeg:*,http-get:*:video/quicktime:*" /*SOURCE_TYPES*/ );
+            attr( &doc, _source_n, "xsi:type", "xsd:string" );
+
+            auto _sink_n = element<rapidxml_ns::xml_node<>>( &doc, _browseResponse_n, "Sink", "" );
+            attr( &doc, _sink_n, "xsi:type", "xsd:string" );
+
+            std::string s = "<?xml version=\"1.0\"?>\n";
+            rapidxml_ns::print( std::back_inserter(s), doc, rapidxml_ns::print_no_indenting );
+            response <<  s;
+
+            response.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type( http::mime::XML ) );
+            response.status ( http::http_status::OK );
+
+        } else {
+            SPDLOG_DEBUG( spdlog::get( LOGGER), "unknown request: {}:{} -> {}", request.method(), request.uri(), request.str() );
+        }
+    } else {
+        SPDLOG_DEBUG( spdlog::get( LOGGER), "unknown method: {}:{} -> {}", request.method(), request.uri(), request.str() );
+    }
+
     response.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type( http::mime::XML ) );
     return http::http_status::OK;
 }
 
-http::http_status Server::description( http::Request& request, http::Response& response ) {
+http::http_status Server::description( http::Request&, http::Response& response ) {
     rapidxml_ns::xml_document<> doc;
 
     auto root_n = element<rapidxml_ns::xml_node<>>( &doc, &doc, "root", "" );
@@ -166,6 +217,13 @@ http::http_status Server::description( http::Request& request, http::Response& r
     element<rapidxml_ns::xml_node<>>( &doc, _service_cms , "controlURL", "/ctl/cms" );
     element<rapidxml_ns::xml_node<>>( &doc, _service_cms , "eventSubURL", "/ctl/cms" );
     element<rapidxml_ns::xml_node<>>( &doc, _service_cms , "SCPDURL", "/cms.xml" );
+
+    auto _service_ms_media = element<rapidxml_ns::xml_node<>>( &doc, _service_list, "service", "" );
+    element<rapidxml_ns::xml_node<>>( &doc, _service_ms_media , "serviceType", "urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1" );
+    element<rapidxml_ns::xml_node<>>( &doc, _service_ms_media , "serviceId", "urn:microsoft.com:serviceId:X_MS_MediaReceiverRegistrar" );
+    element<rapidxml_ns::xml_node<>>( &doc, _service_ms_media , "controlURL", "/ctl/X_MS_MediaReceiverRegistrar" );
+    element<rapidxml_ns::xml_node<>>( &doc, _service_ms_media , "eventSubURL", "/evt/X_MS_MediaReceiverRegistrar" );
+    element<rapidxml_ns::xml_node<>>( &doc, _service_ms_media , "SCPDURL", "/X_MS_MediaReceiverRegistrar.xml" );
 
     element<rapidxml_ns::xml_node<>>( &doc, device_n, "URLBase", fmt::format("http://{}:{}", config_->listen_address, config_->http_port ) );
 

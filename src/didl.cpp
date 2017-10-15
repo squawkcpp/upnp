@@ -52,10 +52,10 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
     if( values.find( param::GENRE ) != values.end() )
     { element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:genre", values.at( param::GENRE ) ); }
 
-    if( _type == data::NodeType::Enum::audio && _type == data::NodeType::Enum::album ) {
+    if( _type == data::NodeType::Enum::audio ) {
         auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
-            fmt::format( "{0}/img/{1}_{2}.jpg", config_->cds_uri, "med", key ) );
-        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_TN" );
+            fmt::format( "{0}{1}", config_->cds_uri, data::get( redis_, values.at( param::PARENT ), param::MED ) ) );
+        attr( &doc_, _cover_n, "dlna:profileID", "JPEG_MED" );
     } else if( values.find( param::THUMB ) != values.end() ) {
         auto _cover_n = element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "albumArtURI",
             fmt::format( "{0}{1}", config_->cds_uri, values.at( param::THUMB ) ) );
@@ -124,6 +124,7 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
         if( values.find( "bitrate" ) != values.end() )
         { attr( &doc_, _res_n, "bitrate", values.at( "bitrate" ) ); }
 
+        if( values.find( "width" ) != values.end() && values.find( "height" ) != values.end() )
         { attr( &doc_, _res_n, "resolution", fmt::format( "{0}x{1}", values.at( "width" ), values.at( "height" ) ) ); }
         if( values.find( "BitsPerSample" ) != values.end() ) //TODO BitsPerSample?
         { attr( &doc_, _res_n, "colorDepth", values.at( "BitsPerSample" ) ); }

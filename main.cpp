@@ -90,7 +90,8 @@ int main( int argc, char* argv[] ) {
         { _container.config->uuid, device_uri_ },
         { upnp::NS_ROOT_DEVICE, device_uri_ },
         { upnp::NS_MEDIASERVER, device_uri_ },
-        { upnp::NS_CONTENT_DIRECTORY, device_uri_ }
+        { upnp::NS_CONTENT_DIRECTORY, device_uri_ },
+        { upnp::NS_MEDIA_RECEIVER_REGISTRAR, device_uri_ },
     });
 
     //store configuration
@@ -146,7 +147,7 @@ int main( int argc, char* argv[] ) {
         http::mod::Http() );
 
 #ifdef DEBUG
-    _container.www->bind( http::mod::Match<>( ".*" ),
+    _container.www->bind( http::mod::Match<>( "*" ),
         http::mod::Exec( [&_container](http::Request& request, http::Response& response ) -> http::http_status {
         spdlog::get ( "upnp" )->warn ( "HTTP 404: {}", request.uri() );
             return http::http_status::NOT_FOUND;
