@@ -30,7 +30,10 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
     auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_,
         ( std::find( CLASS_CONTAINER.begin(), CLASS_CONTAINER.end(), _type ) != CLASS_CONTAINER.end() ? DIDL_ELEMENT_CONTAINER : DIDL_ELEMENT_ITEM ), "" );
     attr( &doc_, _container_n, DIDL_ATTRIBUTE_ID, key.c_str() );
-    attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, values.at( param::PARENT ) );
+    std::string _parent_id = values.at( param::PARENT );
+    if( values.at( param::PARENT )=="" ) _parent_id = "-1";
+    if( values.at( param::PARENT )=="root" ) _parent_id = "0";
+    attr( &doc_, _container_n, DIDL_ATTRIBUTE_PARENT_ID, _parent_id );
     attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
     attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 

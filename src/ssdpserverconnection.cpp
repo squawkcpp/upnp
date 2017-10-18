@@ -56,8 +56,7 @@ void SSDPServerConnection::send ( std::string request_line, std::map< std::strin
 void SSDPServerConnection::send ( SsdpResponse response ) {
     try {
         std::string buffer = create_header ( response.request_line, response.headers );
-            socket.send_to (
-                    asio::buffer ( buffer, buffer.length() ), sender_endpoint );
+        socket.send_to ( asio::buffer ( buffer, buffer.length() ), sender_endpoint );
     } catch( std::system_error& e ) {
         spdlog::get ( LOGGER )-> warn ( "error in send response: ({}:{})", e.code().value(), e.what() );
     }

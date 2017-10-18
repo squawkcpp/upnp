@@ -325,12 +325,16 @@ static void children( redis_ptr redis /** @param redis redis database pointer. *
 
 
     command_t _redis_command;
-    if( !filter.empty() ) {
-        _redis_command = { redis::FT_SEARCH, key::INDEX, filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count ) };
+    if( !filter.empty() && filter != "*" ) { //TODO
+        //TODO
+        _redis_command = { redis::FT_SEARCH, key::INDEX, filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count - 1 ) };
     } else if( sort == "default" ) {
-        _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count ) };
+        //TODO
+        _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count  - 1 ) };
+
     } else {
-        _redis_command ={ redis::LRANGE, make_key( make_key_list( key ), "sort", sort, order ), std::to_string( index ), std::to_string( index + count ) };
+        //TODO
+        _redis_command ={ redis::LRANGE, make_key( make_key_list( key ), "sort", sort, order ), std::to_string( index ), std::to_string( index + count - 1 ) };
     }
     redox::Command< std::vector< std::string > >& _c = redis->commandSync< std::vector< std::string > >( _redis_command );
     if( _c.ok() ) {
@@ -349,7 +353,7 @@ static void files( redis_ptr redis /** @param redis redis database pointer. */,
                       async_fn fn /** @param fn the callback function. */ ) {
 
     redox::Command< std::vector< std::string > >& _c = redis->commandSync< std::vector< std::string > >(
-        { redis::ZRANGE, data::make_key( key::FS, key, "types" /** TODO */, NodeType::str( type ) ), std::to_string( index ), std::to_string( index + count ) }
+        { redis::ZRANGE, data::make_key( key::FS, key, "types" /** TODO */, NodeType::str( type ) ), std::to_string( index ), std::to_string( index + count - 1 ) }
     );
     if( _c.ok() ) {
         for( const std::string& __c : _c.reply() ) {

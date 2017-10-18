@@ -66,29 +66,12 @@ struct UpnpCommand {
 
 };
 
-//template< class T > //TODO
-//inline T* element( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
-//    rapidxml_ns::xml_node<> *_n = doc->allocate_node(rapidxml_ns::node_element,
-//                                                     doc->allocate_string(name.c_str()),
-//                                                     doc->allocate_string(value.c_str()) );
-//    parent->append_node(_n);
-//    return _n;
-//}
-//template< class T >
-//inline void attr( rapidxml_ns::xml_document<>* doc, T* parent, const std::string& name, const std::string& value ) {
-//    rapidxml_ns::xml_attribute<> *_attr = doc->allocate_attribute( doc->allocate_string(name.c_str()), doc->allocate_string(value.c_str()) );
-//    parent->append_attribute(_attr);
-//}
-
 /** @brief The UPNP Server class. */
 class Server {
 public:
     /** @brief The CDS Server CTOR. */
     Server(const std::string& redis, /** @param redis redis host */
-           const short port /** @param port the redis port. */ )
-
-        : redis_( data::make_connection( redis, port ) ),
-          config_( json( data::config( redis_ ) ) ) {}
+           const short port /** @param port the redis port. */ );
 
     static UpnpCommand parse( const std::string& body );
 
@@ -105,6 +88,7 @@ public:
 
 private:
     data::redis_ptr redis_;
+    redox::Subscriber sub_;
     config_t config_;
 };
 

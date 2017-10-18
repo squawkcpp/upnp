@@ -17,6 +17,7 @@
 #include "src/server.h"
 #include "src/ssdpserver.h"
 #include "src/_utils.h"
+#include "src/_icons.h"
 
 using namespace std::placeholders;
 
@@ -92,6 +93,7 @@ int main( int argc, char* argv[] ) {
         { upnp::NS_MEDIASERVER, device_uri_ },
         { upnp::NS_CONTENT_DIRECTORY, device_uri_ },
         { upnp::NS_MEDIA_RECEIVER_REGISTRAR, device_uri_ },
+        { fmt::format( "uuid:{}", _container.config->uuid ), device_uri_ },
     });
 
     //store configuration
@@ -146,6 +148,24 @@ int main( int argc, char* argv[] ) {
         http::mod::Exec( std::bind( &upnp::Server::cms, _container.server, _1, _2 ) ),
         http::mod::Http() );
 
+    _container.www->bind( http::mod::Match< std::string >( "^\\/+squawk([[:digit:]]+).png$", key::KEY ),
+        http::mod::Exec( [&_container](http::Request& request, http::Response& response ) -> http::http_status {
+            if( request.attribute( key::KEY ) == "120" )
+            { response.write( (char *)squawk120_png, squawk120_png_len ); }
+            else if( request.attribute( key::KEY ) == "64" )
+            { response.write( (char *)squawk64_png, squawk64_png_len ); }
+            else if( request.attribute( key::KEY ) == "48" )
+            { response.write( (char *)squawk48_png, squawk48_png_len ); }
+            else if( request.attribute( key::KEY ) == "32" )
+            { response.write( (char *)squawk32_png, squawk32_png_len ); }
+            else /* if( request.attribute( key::KEY_KEY ) == "16" ) */
+            { response.write( (char *)squawk16_png, squawk16_png_len ); }
+
+            response.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type ( http::mime::PNG ) );
+            return http::http_status::OK;
+        }),
+        http::mod::Http()
+    );
 #ifdef DEBUG
     _container.www->bind( http::mod::Match<>( "*" ),
         http::mod::Exec( [&_container](http::Request& request, http::Response& response ) -> http::http_status {

@@ -97,7 +97,7 @@ void SSDPServerImpl::handle_receive ( http::Request & request ) {
 
         if ( request.method() == SSDP_MSEARCH ) { //search request
             //search all devices
-            if ( request.parameter ( SSDP_HEADER_ST ) == NS_ROOT_DEVICE || request.parameter ( SSDP_HEADER_ST ) == SSDP_NS_ALL ) {
+            if ( /* TODO request.parameter ( SSDP_HEADER_ST ) == NS_ROOT_DEVICE || */ request.parameter ( SSDP_HEADER_ST ) == SSDP_NS_ALL ) {
                 for ( auto & iter : namespaces ) {
                     SsdpResponse response ( http::http_status::OK, SSDP_REQUEST_LINE_OK, create_response ( iter.first, iter.second ) );
                     connection->send ( response );
@@ -194,8 +194,8 @@ std::map< std::string, std::string > SSDPServerImpl::create_response ( const std
     map[boost::to_upper_copy ( SSDP_HEADER_ST )] = nt;
     map[boost::to_upper_copy ( SSDP_HEADER_USN )] = fmt::format ( "uuid:{}::{}", config_->uuid, nt );
     map[boost::to_upper_copy ( SSDP_HEADER_EXT )] = "";
-    map[boost::to_upper_copy ( http::header::DATE )] = time_string();
-    map[boost::to_upper_copy ( http::header::CONTENT_LENGTH )] = "0";
+    map[boost::to_upper_copy ( http::header::DATE )] = "Mon, 16 Oct 2017 09:59:53 GMT"; //time_string();
+    map[/*boost::to_upper_copy (*/ http::header::CONTENT_LENGTH /*)*/] = "0";
 
         return map;
 }
@@ -210,10 +210,10 @@ void SSDPServerImpl::send_anounce ( const std::string & nt, const std::string & 
     map[boost::to_upper_copy ( SSDP_HEADER_USN )] = fmt::format ( "uuid:{}::{}", config_->uuid, nt );
     map[boost::to_upper_copy ( SSDP_HEADER_NTS )] = SSDP_STATUS_ALIVE;
     map[boost::to_upper_copy ( SSDP_HEADER_EXT )] = "";
-    map[boost::to_upper_copy ( SSDP_HEADER_DATE )] = time_string();
-    map[boost::to_upper_copy ( http::header::CONTENT_LENGTH )] = "0";
+    map[boost::to_upper_copy ( SSDP_HEADER_DATE )] = "Mon, 16 Oct 2017 09:59:53 GMT"; //time_string();
+    map[/*boost::to_upper_copy (*/ http::header::CONTENT_LENGTH /*)*/] = "0";
 
-        connection->send ( SSDP_HEADER_REQUEST_LINE, map );
+    connection->send ( SSDP_HEADER_REQUEST_LINE, map );
 }
 void SSDPServerImpl::send_suppress ( const std::string & nt ) {
 
@@ -232,22 +232,21 @@ void SSDPServerImpl::send_suppress ( const std::string & nt ) {
 void SSDPServerImpl::annouceThread() {
     _announce_time = std::chrono::high_resolution_clock::now();
 
+        //TODO send announce on thread start
         while ( announce_thread_run ) {
 
-        //check reanounce timer
-                auto end_time = std::chrono::high_resolution_clock::now();
-        auto dur = end_time - _announce_time;
-                auto f_secs = std::chrono::duration_cast<std::chrono::duration<unsigned int>> ( dur );
-
-                if ( f_secs.count() >= ( ANNOUNCE_INTERVAL / 3 ) ) {
-                        for ( size_t i = 0; i < NETWORK_COUNT; i++ ) {
-                                for ( auto & iter : namespaces ) {
-                                        send_anounce ( iter.first, iter.second );
-                                }
-                        }
-
-            _announce_time = std::chrono::high_resolution_clock::now();
+            //check reanounce timer
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto dur = end_time - _announce_time;
+            auto f_secs = std::chrono::duration_cast<std::chrono::duration<unsigned int>> ( dur );
+            if ( f_secs.count() >= 60 /*( ANNOUNCE_INTERVAL / 3 )*/ ) {
+                for ( size_t i = 0; i < NETWORK_COUNT; i++ ) {
+                    for ( auto & iter : namespaces ) {
+                            send_anounce ( iter.first, iter.second );
+                    }
                 }
+                _announce_time = std::chrono::high_resolution_clock::now();
+            }
 
         std::this_thread::sleep_for ( std::chrono::milliseconds ( SSDP_THREAD_SLEEP ) );
         }

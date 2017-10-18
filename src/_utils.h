@@ -22,7 +22,9 @@
 namespace upnp {
 
 static const std::string LOGGER = "upnp";
+static const std::string VERSION = UPNP_VERSION;
 
+static const std::string NS_ROOT = "root";
 static const std::string NS_ROOT_DEVICE = "upnp:rootdevice";
 static const std::string NS_MEDIASERVER = "urn:schemas-upnp-org:device:MediaServer:1";
 static const std::string NS_CONTENT_DIRECTORY = "urn:schemas-upnp-org:service:ContentDirectory:1";
