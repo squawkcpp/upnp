@@ -1,6 +1,8 @@
 #include "server.h"
 
-#include  <iostream>
+#include <iostream>
+
+#include <sys/utsname.h>
 
 #include "fmt/format.h"
 #include "rapidxml_ns.hpp"
@@ -77,11 +79,22 @@ Server::Server(const std::string& redis, /** @param redis redis host */
             http::HttpClient< http::Http > _client ( p.host(), p.proto() );
             http::Request _request ( p.path() );
             _request.method( "NOTIFY" );
-            char* _body = R"xml(<e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0" xmlns:s="urn:schemas-upnp-org:service:ContentDirectory:1"><e:property><TransferIDs></TransferIDs></e:property><e:property><SystemUpdateID>666</SystemUpdateID></e:property></e:propertyset>)xml";
-            _request.write( _body, strlen( _body ) );
+
+            _request.parameter ( http::header::HOST , fmt::format ( "{}:{}", p.host(), p.proto() ) );
+            _request.parameter ( http::header::CONTENT_TYPE, http::mime::mime_type( http::mime::XML ) );
+            _request.parameter ( http::header::CONNECTION, http::header::CONNECTION_CLOSE ); // TODO how to set that correctly
+            _request.parameter ( http::header::CACHE_CONTROL, "no-cache" );
+            _request.parameter ( "SID", fmt::format ("uuid:{}", config_->uuid ) );
+            _request.parameter ( "NT", "upnp:event" );
+            _request.parameter ( "NTS", "upnp:propchange" );
+            _request.parameter ( "SEQ", "0" ); // TODO parameter
+
+            /* TODO generate xml*/  _request << R"xml(<e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0" xmlns:s="urn:schemas-upnp-org:service:ContentDirectory:1"><e:property><TransferIDs></TransferIDs></e:property><e:property><SystemUpdateID>666</SystemUpdateID></e:property></e:propertyset>)xml";
             std::stringstream _ss;
             auto _response = _client.get ( _request, _ss );
-            std::cout << "NOTIFY:" << _response << std::endl;
+            if( _response.status() != http::http_status::OK ) {
+                spdlog::get ( LOGGER )->debug ( "CDS NOTIFY ERROR:{}", static_cast< int >( _response.status() ) );
+            }
 
         } );
         sub_.subscribe ( "CDS_UNSUBSCRIBE", [] ( const std::string & topic, const std::string & msg ) {
@@ -90,17 +103,19 @@ Server::Server(const std::string& redis, /** @param redis redis host */
             //fire initial event
         } );
         sub_.subscribe ( "CMS_SUBSCRIBE", [] ( const std::string & topic, const std::string & msg ) {
+            sleep( 1 );
             spdlog::get ( LOGGER )->debug ( "CMS SUBSCRIBE:{}:{}", topic, msg );
             //persist the url
             //fire initial event
             http::utils::UrlParser p { msg };
-            std::cout << p.host() << ":" << p.proto() << "/" << p.path() << std::endl;
+            std::cout << p.host() << ":" << p.proto() << p.path() << std::endl;
             http::HttpClient< http::Http > _client ( p.host(), p.proto() );
             http::Request _request ( p.path() );
             _request.method( "NOTIFY" );
             char* _content = R"xml(<e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0" xmlns:s="urn:schemas-upnp-org:service:ConnectionManager:1"><e:property><SourceProtocolInfo>http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN,http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM,http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED,http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_50_AC3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_60_AC3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HP_HD_AC3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_HD_AAC_MULT5_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_HD_AC3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_HD_MPEG1_L3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_SD_AAC_MULT5_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_SD_AC3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_MP_SD_MPEG1_L3_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_NTSC,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_PAL,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_HD_NA_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_SD_NA_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_SD_EU_ISO,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG1,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_MP_SD_AAC_MULT5,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_MP_SD_AC3,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_BL_CIF15_AAC_520,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_BL_CIF30_AAC_940,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_BL_L31_HD_AAC,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_BL_L32_HD_AAC,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_BL_L3L_SD_AAC,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_HP_HD_AAC,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_MP_HD_1080i_AAC,http-get:*:video/mp4:DLNA.ORG_PN=AVC_MP4_MP_HD_720p_AAC,http-get:*:video/mp4:DLNA.ORG_PN=MPEG4_P2_MP4_ASP_AAC,http-get:*:video/mp4:DLNA.ORG_PN=MPEG4_P2_MP4_SP_VGA_AAC,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_50_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_50_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_60_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_60_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HP_HD_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_AAC_MULT5,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_AAC_MULT5_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_MPEG1_L3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_MPEG1_L3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_AAC_MULT5,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_AAC_MULT5_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_MPEG1_L3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_SD_MPEG1_L3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_HD_NA,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_HD_NA_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_EU,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_EU_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_NA,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_NA_T,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVSPLL_BASE,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVSPML_BASE,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVSPML_MP3,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVMED_BASE,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVMED_FULL,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVMED_PRO,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVHIGH_FULL,http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVHIGH_PRO,http-get:*:video/3gpp:DLNA.ORG_PN=MPEG4_P2_3GPP_SP_L0B_AAC,http-get:*:video/3gpp:DLNA.ORG_PN=MPEG4_P2_3GPP_SP_L0B_AMR,http-get:*:audio/mpeg:DLNA.ORG_PN=MP3,http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMABASE,http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMAFULL,http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMAPRO,http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMALSL,http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMALSL_MULT5,http-get:*:audio/mp4:DLNA.ORG_PN=AAC_ISO_320,http-get:*:audio/3gpp:DLNA.ORG_PN=AAC_ISO_320,http-get:*:audio/mp4:DLNA.ORG_PN=AAC_ISO,http-get:*:audio/mp4:DLNA.ORG_PN=AAC_MULT5_ISO,http-get:*:audio/L16;rate=44100;channels=2:DLNA.ORG_PN=LPCM,http-get:*:image/jpeg:*,http-get:*:video/avi:*,http-get:*:video/divx:*,http-get:*:video/x-matroska:*,http-get:*:video/mpeg:*,http-get:*:video/mp4:*,http-get:*:video/x-ms-wmv:*,http-get:*:video/x-msvideo:*,http-get:*:video/x-flv:*,http-get:*:video/x-tivo-mpeg:*,http-get:*:video/quicktime:*,http-get:*:audio/mp4:*,http-get:*:audio/x-wav:*,http-get:*:audio/x-flac:*,http-get:*:application/ogg:*</SourceProtocolInfo></e:property><e:property><SinkProtocolInfo></SinkProtocolInfo></e:property><e:property><CurrentConnectionIDs>0</CurrentConnectionIDs></e:property></e:propertyset>)xml";
-            _request.write( _content, strlen( _content) );
+            _request.write( _content, std::streamsize( strlen( _content )) );
             std::stringstream _ss;
+            SPDLOG_DEBUG( spdlog::get ( LOGGER ), "send event to: " + msg );
             auto _response = _client.get ( _request, _ss );
             std::cout << "NOTIFY:" << _response << std::endl;
         } );
@@ -115,11 +130,12 @@ Server::Server(const std::string& redis, /** @param redis redis host */
 http::http_status Server::cds( http::Request& request, http::Response& response ) {
 
     if( request.method() == "SUBSCRIBE" ) {
-        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cds: {0}", request.str() );
+        std::stringstream _ss; //TODO
+        _ss << request;
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cds: {0}", _ss.str() );
+
         response.parameter ( http::header::CONTENT_LENGTH, "0" );
-        response.parameter ( "SID", fmt::format ("uuid:{}", config_->uuid ) );
-        response.parameter ( "EXT", "" );
-        response.parameter ( "TIMEOUT", "Second-1800" ); // TODO parameter
+        response.parameter ( "Timeout", "Second-1800" ); // TODO parameter
 
         std::string _callback = request.parameter( "Callback");
         if( !_callback.empty() ) {
@@ -186,7 +202,7 @@ http::http_status Server::cds( http::Request& request, http::Response& response 
                         _didl.write( key, data::node( redis_, key ) );
                     });
                 } else {
-                    data::children( redis_, _object_id, _index, _count, "default" /** TODO */ , "asc", "", [this,&_didl,&_upnp_command]( const std::string& key ) {
+                    data::children( redis_, _object_id, _index, _count, "alpha" /** TODO */ , "asc", "", [this,&_didl,&_upnp_command]( const std::string& key ) {
                         _didl.write( key, data::node( redis_, key ) );
                     });
                 }
@@ -220,11 +236,12 @@ http::http_status Server::cds( http::Request& request, http::Response& response 
 }
 
 http::http_status Server::cms( http::Request& request, http::Response& response ) {
+
     if( request.method() == "SUBSCRIBE" ) {
         SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cms: {0}", request.str() );
         response.parameter ( http::header::CONTENT_LENGTH, "0" );
         response.parameter ( "SID", fmt::format ("uuid:{}", config_->uuid ) );
-        response.parameter ( "TIMEOUT", "Second-1800" ); // TODO parameter
+        response.parameter ( "Timeout", "Second-1800" ); // TODO parameter
 
         std::string _callback = request.parameter( "Callback");
         if( !_callback.empty() ) {
@@ -239,7 +256,7 @@ http::http_status Server::cms( http::Request& request, http::Response& response 
         }
 
     } else if( request.method() == "UNSUBSCRIBE" ) {
-        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cms: {0}", request.str() );
+        SPDLOG_DEBUG( spdlog::get( LOGGER ), "event/cms unsubscribe: {0}", request.str() );
         response.parameter ( http::header::CONTENT_LENGTH, "0" );
         response.parameter ( "SID", fmt::format ("uuid:{}", config_->uuid ) );
         redis_->publish ( "CMS_UNSUBSCRIBE", request.str() );

@@ -23,11 +23,11 @@ endif()
 add_definitions(-DASIO_STANDALONE)
 add_definitions(-DUPNP_VERSION="${UPNP_TAG_VERSION}")
 
-#if(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DSPDLOG_TRACE_ON)
     add_definitions(-DSPDLOG_DEBUG_ON)
-#    add_definitions(-DDEBUG)
-#endif(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DDEBUG)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 #add headers for editor
 FILE(GLOB_RECURSE HeaderFiles "${PROJECT_SOURCE_DIR}/src/*.h")

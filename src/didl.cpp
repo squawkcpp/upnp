@@ -26,6 +26,9 @@ Didl::Didl( data::redis_ptr redis, config_t config ) : redis_(redis), config_(co
 
 void Didl::write( const std::string& key, const std::map< std::string, std::string >& values ) {
 
+    if( values.find( param::CLASS ) == values.end() )
+    { return; }
+
     data::NodeType::Enum _type = data::NodeType::parse( values.at( param::CLASS ) );
     auto _container_n = element<rapidxml_ns::xml_node<>>( &doc_, root_node_,
         ( std::find( CLASS_CONTAINER.begin(), CLASS_CONTAINER.end(), _type ) != CLASS_CONTAINER.end() ? DIDL_ELEMENT_CONTAINER : DIDL_ELEMENT_ITEM ), "" );
@@ -37,7 +40,13 @@ void Didl::write( const std::string& key, const std::map< std::string, std::stri
     attr( &doc_, _container_n, DIDL_ATTRIBUTE_RESTRICTED, "1" );
     attr( &doc_, _container_n, DIDL_ATTRIBUTE_CHILD_COUNT, std::to_string( data::children_count( redis_, key ) ) );
 
-    element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( param::NAME ) );
+    if( _type == data::NodeType::Enum::episode ) {
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", fmt::format( "S{0}{1} {2}",
+                values.at( param::SEASON ), values.at( param::EPISODE ), values.at( param::NAME ) ) );
+    } else {
+        element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "dc:title", values.at( param::NAME ) );
+    }
+
     element<rapidxml_ns::xml_node<>>( &doc_, _container_n, "upnp:class", CLASS_NAMES.at( _type ) );
 
     if( values.find( param::YEAR ) != values.end() )

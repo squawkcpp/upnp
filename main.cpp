@@ -16,6 +16,7 @@
 #include "src/datastore.h"
 #include "src/server.h"
 #include "src/ssdpserver.h"
+#include "src/upnpheaders.h"
 #include "src/_utils.h"
 #include "src/_icons.h"
 
@@ -142,7 +143,7 @@ int main( int argc, char* argv[] ) {
 
     _container.www->bind( http::mod::Match<>( "^/ctl/cds$" ),
         http::mod::Exec( std::bind( &upnp::Server::cds, _container.server, _1, _2 ) ),
-        http::mod::Http() );
+        upnp::UpnpHeaders( _container.config ) );
 
     _container.www->bind( http::mod::Match<>( "^/ctl/cms$" ),
         http::mod::Exec( std::bind( &upnp::Server::cms, _container.server, _1, _2 ) ),

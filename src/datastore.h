@@ -325,15 +325,11 @@ static void children( redis_ptr redis /** @param redis redis database pointer. *
 
 
     command_t _redis_command;
-    if( !filter.empty() && filter != "*" ) { //TODO
-        //TODO
+    if( !filter.empty() && filter != "*" ) {
         _redis_command = { redis::FT_SEARCH, key::INDEX, filter, "NOCONTENT", "LIMIT", std::to_string( index ), std::to_string( index + count - 1 ) };
     } else if( sort == "default" ) {
-        //TODO
-        _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count  - 1 ) };
-
+        _redis_command = { (order=="desc"?redis::ZREVRANGE:redis::ZRANGE), make_key_list( key ), std::to_string( index ), std::to_string( index + count - 1 ) };
     } else {
-        //TODO
         _redis_command ={ redis::LRANGE, make_key( make_key_list( key ), "sort", sort, order ), std::to_string( index ), std::to_string( index + count - 1 ) };
     }
     redox::Command< std::vector< std::string > >& _c = redis->commandSync< std::vector< std::string > >( _redis_command );
@@ -380,15 +376,15 @@ static int files_count( redis_ptr redis, const std::string& key, const NodeType:
 
 /** @brief create a new tag. */
 static void add_tag( redis_ptr redis /** @param redis redis database pointer. */,
-                            const std::string& name /** @param name name of the tag */,
-                            const std::string& keyword /** @param keyword the tag */,
-                            const NodeType::Enum& type /** TODO remove @param type the type for the tag */,
-                            const std::string& node /** @param node the node key */,
+                            const NodeType::Enum& type /** @param type the content module for the tag */,
+                            const std::string& tag /** @param tag name of the tag */,
+                            const std::string& value /** @param value of the tag */,
+                            const std::string& node /** @param the node this tag belongs to */,
                             float score /** @param score the score of the node index */ ) {
 
-    redis->command( { redis::ZADD, make_key( key::FS, key::TAG, param::NAME ), std::to_string( score ), name } );
-    redis->command( { redis::ZADD, make_key( key::FS, key::TAG, name ), std::to_string( score ),  keyword } );
-    redis->command( { redis::ZADD, make_key( key::FS, key::TAG, keyword ), std::to_string( score ), node } );
+    redis->command( { redis::ZADD, make_key( key::FS, NodeType::str( type ), key::TAG, param::NAME ), std::to_string( score ), tag } );
+    redis->command( { redis::ZADD, make_key( key::FS, NodeType::str( type ), key::TAG, tag ), std::to_string( score ),  value } );
+    redis->command( { redis::ZADD, make_key( key::FS, NodeType::str( type ), key::TAG, value ), std::to_string( score ), node } );
 }
 
 /** @brief evaluate the lua script. */

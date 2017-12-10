@@ -6,7 +6,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <sys/utsname.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -15,13 +14,6 @@
 
 namespace upnp {
 
-inline std::string uname() {
-    struct utsname uts;
-    uname ( &uts );
-    std::ostringstream system;
-    system << uts.sysname << "/" << uts.version;
-    return system.str();
-};
 inline std::string time_string() {
     time_t rawtime;
     time ( &rawtime );

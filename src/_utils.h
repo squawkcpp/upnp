@@ -1,6 +1,8 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <sys/utsname.h>
+
 #include <algorithm>
 #include <regex>
 #include <map>
@@ -79,8 +81,8 @@ const static std::string TOTAL_MATCHES = "TotalMatches";
 /** @brief cds update id */
 const static std::string UPDATE_ID = "UpdateID";
 
-template< class Fn >
-inline void FOR( const std::string& local_name, auto root_node, Fn fn ) {
+template< class N, class Fn >
+inline void FOR( const std::string& local_name, N root_node, Fn fn ) {
     for( rapidxml_ns::xml_node<>* __r_sieblings = root_node->first_node();
          __r_sieblings;
          __r_sieblings = __r_sieblings->next_sibling() ) {
@@ -89,6 +91,14 @@ inline void FOR( const std::string& local_name, auto root_node, Fn fn ) {
         { fn( __r_sieblings ); }
     }
 }
+
+inline std::string uname() {
+    struct utsname uts;
+    uname ( &uts );
+    std::ostringstream system;
+    system << uts.sysname << "/" << uts.version;
+    return system.str();
+};
 
 /** @brief The SSDP Response */
 struct SsdpResponse {
