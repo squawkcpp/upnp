@@ -23,7 +23,7 @@ deploy:
   provider: releases
   api_key:
     secure: "C7cC2P68fhLP0PPbWyP1Ryc9CbQJ9FqbiDszLv/F2rHqkokTG7aBrKwTeFvS469mbFE4cDObjm9TJiU95TmgKj/IkNJPdquyqNPtl7hRuiGVxWlTowsDsk6ga5ke2yjbMP5NTHCuKOYInrkXH8AxqUMMdgj28M19nGwxIzBdIOri20aX2S2+i/zh5aHxEhuUiu0par5r8CY4TFvPyROxoOFNTr+J8Anet1rRNBKbD00EH/Q+pXVydS+AlG9lqAIBHSFHi5DEmZd5ra8s0eEx1BkoWL1GuDJGsxEpLjI+k+EQBRdDor+c+Z5nQoRTsHqWJ766wuDL8UlmZTAL2gjMETjbmNwK9ciEoIv438OaDhHP2ebAce3YgDjCvIll1G7vrJ0x6ikdZKo+x60siPlnnkwIx8vEu9IW0kLKy6juWVAbPi8Epf+w1IMCUeltRZTfsRT+CIqfhHxoGyByRO1qKdBpx0M26KHtNLzhFpr56tfOUX/1A+QuUOYO5WTUNw5ceUegI1zWdzxzBJSY/yFrSe3qSXD5acXCLE4CnHxDNtWcy01LQ5hoZ53//FWGG8EU5eRK9nVtzN9+vWXX+dBuBcu9+Os0mv8wziqgXzSlHohj3hodp3HnmmJWp9X3dQnNCncC+5pW3jR70pJbt66a9hYNfR91KV7hpA8+0Mk585w="
-  file: '$(pwd)/build/upnp_$TRAVIS_BRANCH.deb'
+  file: '$(pwd)/build/upnp_$TRAVIS_BRANCH.tar.gz'
   skip_cleanup: true
   on:
     tags: true
