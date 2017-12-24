@@ -3,7 +3,7 @@ include(ExternalProject)
 # ---------------------             FMT               ---------------------
 ExternalProject_Add(
   cppfmt
-  URL "https://github.com/fmtlib/fmt/archive/3.0.0.zip"
+  URL "https://github.com/fmtlib/fmt/archive/4.1.0.zip"
   CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
   INSTALL_COMMAND ""
   UPDATE_COMMAND ""
