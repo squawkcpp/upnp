@@ -57,35 +57,36 @@ int main( int argc, char* argv[] ) {
         ( PARAM_REDIS_PORT, "Redis Database port (default: 6379)", cxxopts::value<std::string>()->default_value("6379"), "PORT" )
         ( "help", "Print help")
       ;
-    options.parse(argc, argv);
 
-    if( options.count( "help" ) ) {
+    auto result = options.parse(argc, argv);
+
+    if( result.count( "help" ) ) {
          std::cout << options.help({"", "Group"}) << std::endl;
          exit(0);
     }
 
     Container _container;
 
-    auto& _redis_server = options[PARAM_REDIS].as<std::string>();
-    auto& _redis_port = options[PARAM_REDIS_PORT].as<std::string>();
+    auto& _redis_server = result[PARAM_REDIS].as<std::string>();
+    auto& _redis_port = result[PARAM_REDIS_PORT].as<std::string>();
     _container.redox = data::make_connection( _redis_server, std::stoi( _redis_port ) );
     //load config from database
     if( data::config_exists( _container.redox ) ) {
         _container.config = upnp::json( data::config( _container.redox ) );
     }
 
-    if ( options.count( PARAM_HTTP_PORT ) )
-    { _container.config->http_port = options[PARAM_HTTP_PORT].as<std::string>(); }
-    if ( options.count( PARAM_MULTICAST_ADDRESS ) )
-    { _container.config->multicast_address = options[PARAM_MULTICAST_ADDRESS].as<std::string>(); }
-    if ( options.count( PARAM_MULTICAST_PORT ) )
-    { _container.config->multicast_port = options[PARAM_MULTICAST_PORT].as<std::string>(); }
-    if ( options.count( PARAM_LISTEN_ADDRESS ) )
-    { _container.config->listen_address = options[PARAM_LISTEN_ADDRESS].as<std::string>(); }
-    if ( options.count( param::NAME ) )
-    { _container.config->name = options[param::NAME].as<std::string>(); }
-    if ( options.count( PARAM_CDS_URI ) )
-    { _container.config->cds_uri = options[PARAM_CDS_URI].as<std::string>(); }
+    if ( result.count( PARAM_HTTP_PORT ) )
+    { _container.config->http_port = result[PARAM_HTTP_PORT].as<std::string>(); }
+    if ( result.count( PARAM_MULTICAST_ADDRESS ) )
+    { _container.config->multicast_address = result[PARAM_MULTICAST_ADDRESS].as<std::string>(); }
+    if ( result.count( PARAM_MULTICAST_PORT ) )
+    { _container.config->multicast_port = result[PARAM_MULTICAST_PORT].as<std::string>(); }
+    if ( result.count( PARAM_LISTEN_ADDRESS ) )
+    { _container.config->listen_address = result[PARAM_LISTEN_ADDRESS].as<std::string>(); }
+    if ( result.count( param::NAME ) )
+    { _container.config->name = result[param::NAME].as<std::string>(); }
+    if ( result.count( PARAM_CDS_URI ) )
+    { _container.config->cds_uri = result[PARAM_CDS_URI].as<std::string>(); }
 
     auto device_uri_ = fmt::format( "http://{}:{}/root.xml", _container.config->listen_address, _container.config->http_port );
     std::map< std::string, std::string > _namespaces ( {

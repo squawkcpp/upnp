@@ -1,15 +1,12 @@
 # Dockerfile to install upnp server (UPNP)
-FROM ubuntu:xenial
+FROM base/archlinux:latest
 
 ARG UPNP_TAG_VERSION=master
 
-RUN apt-get -y update
+RUN pacman -Syu --noconfirm && \
+    pacman --noconfirm -S boost doxygen hiredis libev hdf5 make
 
-ADD build/upnp_$UPNP_TAG_VERSION.deb /upnp_$UPNP_TAG_VERSION.deb
-
-RUN apt-get install -y libpcrecpp0v5 libimlib2 libavcodec-ffmpeg56 libavformat-ffmpeg56 libavutil-ffmpeg54 libpoppler-cpp0 libboost-filesystem1.58.0 \
-        libcurl3 libhiredis0.13 libev4 libmagic1 libopencv-highgui2.4v5 \
-&& dpkg -i /upnp_$UPNP_TAG_VERSION.deb
+ADD build/upnp_$UPNP_TAG_VERSION.tar.gz /
 
 ADD docker/upnp.sh /upnp.sh
 RUN chmod +x /*.sh
