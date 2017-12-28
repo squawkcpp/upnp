@@ -1,9 +1,8 @@
-include(ExternalProject)
-
 # ---------------------          cxxopts            ---------------------
 ExternalProject_Add(
   cxxopts_master
   URL "https://github.com/jarro2783/cxxopts/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""

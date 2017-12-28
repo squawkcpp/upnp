@@ -1,8 +1,7 @@
-include(ExternalProject)
-
 ExternalProject_Add(
   spdlog_master
   URL "https://github.com/gabime/spdlog/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""

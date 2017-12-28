@@ -1,9 +1,8 @@
 #https://github.com/svgpp/rapidxml_ns
-include(ExternalProject)
-
 ExternalProject_Add(
   rapidxml_master
   URL "https://github.com/svgpp/rapidxml_ns/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""

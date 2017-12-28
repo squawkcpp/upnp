@@ -11,22 +11,33 @@ SET(UPNP_TAG_VERSION "master" CACHE STRING "The tagged version.")
 # -----------------------   Options and Parameters  -----------------------
 # -------------------------------------------------------------------------
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-option(build_tests "Build all squawk unit tests." ON)
+option(build_tests "Build all squawk unit tests." OFF)
 
-# -------------------------------------------------------------------------
 # -----------------------   Config Toolchain        -----------------------
-# -------------------------------------------------------------------------
-if(CMAKE_COMPILER_IS_GNUCXX)
-    add_definitions(-std=c++14)
-endif()
+set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
-add_definitions(-DASIO_STANDALONE)
+set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set (THREADS_PREFER_PTHREAD_FLAG ON)
+find_package (Threads REQUIRED)
+
+link_libraries("-static")
+
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
+add_definitions( -DHTTP_BUFFER_SIZE=4096 -DHTTP_CLIENT_TIMEOUT=5
+-DHTTP_SERVER_THREAD_POOL_SIZE=10 -DASIO_STANDALONE )
+
 add_definitions(-DUPNP_VERSION="${UPNP_TAG_VERSION}")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DSPDLOG_TRACE_ON)
     add_definitions(-DSPDLOG_DEBUG_ON)
-    add_definitions(-DDEBUG)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 #add headers for editor
@@ -37,6 +48,11 @@ add_custom_target(upnp_headers SOURCES ${HeaderFiles})
 # ---------------------   External Dependencies       ---------------------
 # -------------------------------------------------------------------------
 include(ExternalProject)
+include(cmake/external/openssl.cmake)
+include(cmake/external/boost.cmake)
+include(cmake/external/libev.cmake)
+include(cmake/external/hiredis.cmake)
+include(cmake/external/redox.cmake)
 include(cmake/external/re2.cmake)
 include(cmake/external/gtest.cmake)
 include(cmake/external/asio.cmake)
@@ -45,35 +61,38 @@ include(cmake/external/lightning.cmake)
 include(cmake/external/rapidxml_ns.cmake)
 include(cmake/external/rapidjson.cmake)
 include(cmake/external/cxxopts.cmake)
-include(cmake/external/redox.cmake)
 include(cmake/external/spdlog.cmake)
 
-SET( INCLUDES ${INCLUDES} ${GTEST_INCLUDE_DIR} ${FMT_INCLUDE_DIR}
-            ${RE2_INCLUDE_DIR} ${ASIO_INCLUDE_DIR}
-            ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR}
-            ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR}
-            ${RAPIDJSON_INCLUDE_DIR} ${REDOX_INCLUDE_DIR})
+SET( INCLUDES
+    ${OPENSSL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${GTEST_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
+    ${FMT_INCLUDE_DIR} ${RE2_INCLUDE_DIR} ${ASIO_INCLUDE_DIR}
+    ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR}
+    ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR}
+    ${RAPIDJSON_INCLUDE_DIR} ${REDOX_INCLUDE_DIR}
+    ${INCLUDES}
+)
 
 # -------------------------------------------------------------------------
 # -----------------------   Find Dependencies       -----------------------
 # -------------------------------------------------------------------------
-find_package(Boost 1.54.0 COMPONENTS filesystem system)
+#find_package(Boost 1.54.0 COMPONENTS filesystem system)
 #find_package(CURLpp REQUIRED)
-find_package(CURL REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(Hiredis)
-find_package(Libev)
+#find_package(CURL REQUIRED)
+#find_package(OpenSSL REQUIRED)
+#find_package(Hiredis)
+#find_package(Libev)
 
-SET( INCLUDES ${INCLUDES}
-    ${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
-    ${FLAC++_INCLUDE_DIR}
-)
+#SET( INCLUDES ${INCLUDES}
+#    ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
+#    #${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
+#    ${FLAC++_INCLUDE_DIR}
+#)
 
-SET( LIBS ${LIBS}
-    ${Boost_LIBRARIES} ${CURL_LIBRARIES}
-    ${OPENSSL_LIBRARIES} ${LIBHIREDIS_LIBRARIES} ${LIBEV_LIBRARIES}
-    -lpthread -luuid -lm -lz
-)
+#SET( LIBS ${LIBS}
+#    ${Boost_LIBRARIES} ${CURL_LIBRARIES}
+#    ${OPENSSL_LIBRARIES} ${LIBHIREDIS_LIBRARIES} ${LIBEV_LIBRARIES}
+#    -lpthread -luuid -lm -lz
+#)
 
 # -------------------------------------------------------------------------
 # -----------------------   Compile Binary          -----------------------
@@ -81,7 +100,13 @@ SET( LIBS ${LIBS}
 aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
 include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
 add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
-target_link_libraries(upnp cxxopts re2 lightning redox fmt spdlog asio rapidjson rapidxml ${LIBS})
+target_link_libraries(upnp 
+	cxxopts re2 lightning fmt spdlog asio
+        rapidjson rapidxml redox 
+        ${CURL_LIBRARIES} ${LIBEV_LIBRARIES}
+        ${LIBS}
+        hredis libev boost filesystem system ssl crypto Threads::Threads -ldl
+)
 install(TARGETS upnp RUNTIME DESTINATION bin)
 
 # -------------------------------------------------------------------------
@@ -92,7 +117,13 @@ if (build_tests)
     enable_testing()
     include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
     add_executable(test_upnp ${UPNP_SOURCES_TEST} ${UPNP_SOURCES})
-    target_link_libraries(test_upnp ${GTEST_MAIN_PATH} gtest re2 lightning redox fmt spdlog asio rapidjson rapidxml ${LIBS})
+    target_link_libraries(test_upnp
+        ${GTEST_MAIN_PATH} gtest re2 lightning fmt spdlog
+        asio rapidjson rapidxml libev redox hredis 
+ 	${CURL_LIBRARIES} ${LIBHIREDIS_LIBRARIES} ${LIBEV_LIBRARIES}
+	${LIBS}
+	boost ssl crypto Threads::Threads -ldl --uuid
+    )
     add_test(upnp-tests test_upnp)
 endif()
 
@@ -106,20 +137,6 @@ SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
 SET(CPACK_GENERATOR "TGZ")
 SET(CPACK_COMPONENTS_ALL_IN_ONE_PACKAGE 1)
 SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
-
-if(UPNP_TAG_VERSION MATCHES "^([0-9]+)[.]([0-9]+)[.]([0-9]+)$" )
-    string(REPLACE "." ";" UPNP_TAG_VERSION_STRING ${UPNP_TAG_VERSION})
-    list(GET UPNP_TAG_VERSION_STRING 0 MAJOR_VERSION)
-    list(GET UPNP_TAG_VERSION_STRING 1 MINOR_VERSION)
-    list(GET UPNP_TAG_VERSION_STRING 2 PATCH_VERSION)
-else()
-    SET(MAJOR_VERSION "0")
-    SET(MINOR_VERSION "0")
-    SET(PATCH_VERSION "0")
-endif()
-SET(CPACK_PACKAGE_VERSION_MAJOR "${MAJOR_VERSION}")
-SET(CPACK_PACKAGE_VERSION_MINOR "${MINOR_VERSION}")
-SET(CPACK_PACKAGE_VERSION_PATCH "${PATCH_VERSION}")
 
 SET(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${UPNP_TAG_VERSION}")
 SET(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}_${UPNP_TAG_VERSION}")

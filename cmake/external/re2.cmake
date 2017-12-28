@@ -1,4 +1,3 @@
-include(ExternalProject)
 # - download and build RE2
 # Once done this will define
 #  RE2_INCLUDE_DIR - The RE2 include directory
@@ -7,6 +6,7 @@ include(ExternalProject)
 ExternalProject_Add(
   google_re2
   URL "https://github.com/google/re2/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   INSTALL_COMMAND ""
   UPDATE_COMMAND ""
   PATCH_COMMAND ""

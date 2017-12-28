@@ -1,9 +1,8 @@
 #https://github.com/miloyip/rapidjson
-include(ExternalProject)
-
 ExternalProject_Add(
   rapidjson_master
   URL "https://github.com/miloyip/rapidjson/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""

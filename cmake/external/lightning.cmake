@@ -1,8 +1,7 @@
-include(ExternalProject)
-
 ExternalProject_Add(
   lightning_master
   URL "https://github.com/lightningcpp/lightningcpp/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""

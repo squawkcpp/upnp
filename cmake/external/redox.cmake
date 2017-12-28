@@ -1,10 +1,9 @@
-include(ExternalProject)
-
 ExternalProject_Add(
   redox_master
+  DEPENDS hiredis
   URL "https://github.com/hmartiro/redox/archive/master.zip"
-#  CONFIGURE_COMMAND ""
-#  BUILD_COMMAND ""
+  DOWNLOAD_NO_PROGRESS 1
+  CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -Dlib=off
   INSTALL_COMMAND ""
   UPDATE_COMMAND ""
   PATCH_COMMAND ""

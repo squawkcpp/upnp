@@ -1,8 +1,7 @@
-include(ExternalProject)
-
 ExternalProject_Add(
   googletest
   URL "https://github.com/google/googletest/archive/master.zip"
+  DOWNLOAD_NO_PROGRESS 1
   INSTALL_COMMAND ""
   UPDATE_COMMAND ""
   PATCH_COMMAND ""

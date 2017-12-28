@@ -3,7 +3,7 @@
 
 #include <arpa/inet.h>
 #include <ifaddrs.h>
-#include <uuid/uuid.h>
+// #include <uuid/uuid.h>
 
 #include <string>
 #include <vector>
@@ -59,11 +59,11 @@ inline bool validate( std::shared_ptr< Config > config ) {
     } if( config->cds_uri.empty() ) {
         config->cds_uri = "";
     } if( config->uuid.empty() ) {
-        uuid_t out;
-        uuid_generate_random((unsigned char *)&out);
-        char buffer[37];
-        uuid_unparse((unsigned char *)&out, buffer);
-        config->uuid = std::string(buffer);
+//TODO        uuid_t out;
+//        uuid_generate_random((unsigned char *)&out);
+//        char buffer[37];
+//        uuid_unparse((unsigned char *)&out, buffer);
+//        config->uuid = std::string(buffer);
     }
     return true;
 }
