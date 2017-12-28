@@ -14,7 +14,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 option(build_tests "Build all squawk unit tests." OFF)
 
 # -----------------------   Config Toolchain        -----------------------
-set_property (GLOBAL PROPERTY USE_FOLDERS ON)
+
+include(CTest)
+
+#set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -64,7 +67,8 @@ include(cmake/external/cxxopts.cmake)
 include(cmake/external/spdlog.cmake)
 
 SET( INCLUDES
-    ${OPENSSL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${GTEST_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${LIBEV_INCLUDE_DIR}
+    ${HIREDIS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR}
     ${FMT_INCLUDE_DIR} ${RE2_INCLUDE_DIR} ${ASIO_INCLUDE_DIR}
     ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR}
     ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR}
