@@ -5,7 +5,7 @@ ExternalProject_Add(
     PATCH_COMMAND ""
     CONFIGURE_COMMAND cd <SOURCE_DIR> && ./bootstrap.sh --with-libraries=filesystem,system
     UPDATE_COMMAND ""
-    BUILD_COMMAND cd <SOURCE_DIR> && ./b2
+    BUILD_COMMAND cd <SOURCE_DIR> && ./b2 &> boost_build.log
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS "boost_main-prefix/src/boost_main/stage/lib/libboost_system.a"

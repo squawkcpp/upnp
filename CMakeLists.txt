@@ -12,6 +12,9 @@ SET(UPNP_TAG_VERSION "master" CACHE STRING "The tagged version.")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 option(build_tests "Build all squawk unit tests." ON)
 
+set(CMAKE_INSTALL_MESSAGE LAZY)
+set(CMAKE_BUILD_MESSAGE LAZY)
+
 # -----------------------   Config Toolchain        -----------------------
 
 include(CTest)

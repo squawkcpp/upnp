@@ -4,7 +4,7 @@ ExternalProject_Add(
   URL "https://github.com/enki/libev/archive/master.zip"
   DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND cd <SOURCE_DIR> && ./configure  --enable-static
-  BUILD_COMMAND cd <SOURCE_DIR> && make
+  BUILD_COMMAND cd <SOURCE_DIR> && make &> ev_build.log
   INSTALL_COMMAND "" #cd <SOURCE_DIR>  && make install 
   UPDATE_COMMAND ""
   PATCH_COMMAND ""

@@ -3,10 +3,10 @@ EXTERNALPROJECT_ADD(
     openssl
     URL http://www.openssl.org/source/openssl-1.0.2-latest.tar.gz
     DOWNLOAD_NO_PROGRESS 1
-    PATCH_COMMAND "" #${CMAKE_SOURCE_DIR}/patches/patch-manager.sh openssl
+    PATCH_COMMAND ""
     CONFIGURE_COMMAND ./config no-shared --prefix=${CMAKE_BINARY_DIR}
-    BUILD_COMMAND make depend && make
-    INSTALL_COMMAND "" #make install_sw
+    BUILD_COMMAND make depend && make &> openssl_build.log
+    INSTALL_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_BYPRODUCTS openssl-prefix/src/openssl/libssl.a
     BUILD_BYPRODUCTS openssl-prefix/src/openssl/libcrypto.a

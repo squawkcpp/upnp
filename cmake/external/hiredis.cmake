@@ -5,8 +5,8 @@ ExternalProject_Add(
   URL "https://github.com/redis/hiredis/archive/master.zip"
   DOWNLOAD_NO_PROGRESS 1
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND cd <SOURCE_DIR> && make
-  INSTALL_COMMAND "" #cd <SOURCE_DIR> && make install
+  BUILD_COMMAND cd <SOURCE_DIR> && make &> ev_build.log
+  INSTALL_COMMAND ""
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
   BUILD_BYPRODUCTS "hiredis-prefix/src/hiredis/libhiredis.a"
