@@ -28,8 +28,6 @@
 #include "fmt/format.h"
 #include <redox.hpp>
 
-#include "gtest/gtest_prod.h"
-
 /** the redis commands */
 namespace redis {
 static const std::string SADD       = "SADD";
@@ -453,6 +451,15 @@ static bool config_exists ( redis_ptr redis /** @param redis redox database poin
     return ( c.ok() && c.reply() );
 }
 
+static std::map< std::string, std::string > to_map ( command_t in ) {
+    std::map< std::string, std::string > _map;
+    assert ( in.size() % 2 == 0 );
+    for ( size_t i = 0; i < in.size(); ++++i ) {
+        _map[ in.at ( i ) ] = in.at ( i + 1 );
+    }
+    return _map;
+}
+
 private:
 static void __iterate_key (
     std::string& key,
@@ -468,15 +475,6 @@ static void __iterate_key (
     key.append ( ":" );
     key.append ( value );
     __iterate_key ( key, args... );
-}
-FRIEND_TEST(DatastoreTest, to_map );
-static std::map< std::string, std::string > to_map ( command_t in ) {
-    std::map< std::string, std::string > _map;
-    assert ( in.size() % 2 == 0 );
-    for ( size_t i = 0; i < in.size(); ++++i ) {
-        _map[ in.at ( i ) ] = in.at ( i + 1 );
-    }
-    return _map;
 }
 };//struct data
 #endif // DATASTORE_H

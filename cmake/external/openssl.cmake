@@ -2,6 +2,7 @@ include(ExternalProject)
 EXTERNALPROJECT_ADD(
     openssl
     URL http://www.openssl.org/source/openssl-1.0.2-latest.tar.gz
+    DOWNLOAD_NO_PROGRESS 1
     PATCH_COMMAND "" #${CMAKE_SOURCE_DIR}/patches/patch-manager.sh openssl
     CONFIGURE_COMMAND ./config no-shared --prefix=${CMAKE_BINARY_DIR}
     BUILD_COMMAND make depend && make

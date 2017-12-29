@@ -1,23 +1,20 @@
 # -------------------------------------------------------------------------
 # Build UPNP server
 # -------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.10)
 
 project( upnp )
 
 SET(UPNP_TAG_VERSION "master" CACHE STRING "The tagged version.")
 
-# -------------------------------------------------------------------------
 # -----------------------   Options and Parameters  -----------------------
-# -------------------------------------------------------------------------
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-option(build_tests "Build all squawk unit tests." OFF)
+option(build_tests "Build all squawk unit tests." ON)
 
 # -----------------------   Config Toolchain        -----------------------
 
 include(CTest)
-
-#set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,22 +31,17 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 add_definitions( -DHTTP_BUFFER_SIZE=4096 -DHTTP_CLIENT_TIMEOUT=5
--DHTTP_SERVER_THREAD_POOL_SIZE=10 -DASIO_STANDALONE )
-
-add_definitions(-DUPNP_VERSION="${UPNP_TAG_VERSION}")
+                 -DHTTP_SERVER_THREAD_POOL_SIZE=10 -DASIO_STANDALONE
+                 -DUPNP_VERSION="${UPNP_TAG_VERSION}" -DSPDLOG_FMT_EXTERNAL
+                 -DFMT_HEADER_ONLY)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DSPDLOG_TRACE_ON)
     add_definitions(-DSPDLOG_DEBUG_ON)
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
-#add headers for editor
-FILE(GLOB_RECURSE HeaderFiles "${PROJECT_SOURCE_DIR}/src/*.h")
-add_custom_target(upnp_headers SOURCES ${HeaderFiles})
-
-# -------------------------------------------------------------------------
 # ---------------------   External Dependencies       ---------------------
-# -------------------------------------------------------------------------
+
 include(ExternalProject)
 include(cmake/external/openssl.cmake)
 include(cmake/external/boost.cmake)
@@ -66,74 +58,28 @@ include(cmake/external/rapidjson.cmake)
 include(cmake/external/cxxopts.cmake)
 include(cmake/external/spdlog.cmake)
 
-SET( INCLUDES
+SET(IMPORTED_INCLUDES
     ${OPENSSL_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${LIBEV_INCLUDE_DIR}
-    ${HIREDIS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR}
-    ${FMT_INCLUDE_DIR} ${RE2_INCLUDE_DIR} ${ASIO_INCLUDE_DIR}
-    ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR}
-    ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR}
-    ${RAPIDJSON_INCLUDE_DIR} ${REDOX_INCLUDE_DIR}
-    ${INCLUDES}
-)
+    ${HIREDIS_INCLUDE_DIR} ${REDOX_INCLUDE_DIR} ${RE2_INCLUDE_DIR}
+    ${GTEST_INCLUDE_DIR} ${ASIO_INCLUDE_DIR} ${FMT_INCLUDE_DIR}
+    ${LIGHTNING_INCLUDE_DIR} ${RAPIDXML_INCLUDE_DIR} ${RAPIDJSON_INCLUDE_DIR}
+    ${CXXOPTS_INCLUDE_DIR} ${SPDLOG_INCLUDE_DIR})
 
-# -------------------------------------------------------------------------
-# -----------------------   Find Dependencies       -----------------------
-# -------------------------------------------------------------------------
-#find_package(Boost 1.54.0 COMPONENTS filesystem system)
-#find_package(CURLpp REQUIRED)
-#find_package(CURL REQUIRED)
-#find_package(OpenSSL REQUIRED)
-#find_package(Hiredis)
-#find_package(Libev)
+# -----------------------           Compile           -----------------------
 
-#SET( INCLUDES ${INCLUDES}
-#    ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
-#    #${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDES}
-#    ${FLAC++_INCLUDE_DIR}
-#)
+add_subdirectory(src)
 
-#SET( LIBS ${LIBS}
-#    ${Boost_LIBRARIES} ${CURL_LIBRARIES}
-#    ${OPENSSL_LIBRARIES} ${LIBHIREDIS_LIBRARIES} ${LIBEV_LIBRARIES}
-#    -lpthread -luuid -lm -lz
-#)
-
-# -------------------------------------------------------------------------
-# -----------------------   Compile Binary          -----------------------
-# -------------------------------------------------------------------------
-aux_source_directory( ${PROJECT_SOURCE_DIR}/src UPNP_SOURCES )
-include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
-add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp ${UPNP_SOURCES})
-target_link_libraries(upnp 
-	cxxopts re2 lightning fmt spdlog asio
-        rapidjson rapidxml redox 
-        ${CURL_LIBRARIES} ${LIBEV_LIBRARIES}
-        ${LIBS}
-        hredis libev boost filesystem system ssl crypto Threads::Threads -ldl
-)
-install(TARGETS upnp RUNTIME DESTINATION bin)
-
-# -------------------------------------------------------------------------
-# -----------------------   Manage Test Cases       -----------------------
-# -------------------------------------------------------------------------
 if (build_tests)
-    aux_source_directory( ${PROJECT_SOURCE_DIR}/test/ UPNP_SOURCES_TEST )
-    enable_testing()
-    include_directories(${ROOT} ${INCLUDES} ${GTEST_INCLUDE_DIR})
-    add_executable(test_upnp ${UPNP_SOURCES_TEST} ${UPNP_SOURCES})
-    target_link_libraries(test_upnp
-        ${GTEST_MAIN_PATH} gtest re2 lightning fmt spdlog
-        asio rapidjson rapidxml libev redox hredis 
- 	${CURL_LIBRARIES} ${LIBHIREDIS_LIBRARIES} ${LIBEV_LIBRARIES}
-	${LIBS}
-	boost ssl crypto Threads::Threads -ldl --uuid
-    )
-    add_test(upnp-tests test_upnp)
+    add_subdirectory(test)
 endif()
 
-# -------------------------------------------------------------------------
+include_directories(${ROOT} ${IMPORTED_INCLUDES})
+add_executable(upnp ${PROJECT_SOURCE_DIR}/main.cpp)
+target_link_libraries(upnp upnp_app cxxopts)
+install(TARGETS upnp RUNTIME DESTINATION bin)
+
 # -----------------------   Generate Package        -----------------------
-# -------------------------------------------------------------------------
+
 IF(EXISTS "${CMAKE_ROOT}/Modules/CPack.cmake")
 INCLUDE(InstallRequiredSystemLibraries)
 

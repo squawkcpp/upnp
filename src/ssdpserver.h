@@ -5,7 +5,6 @@
 
 #include "boost/algorithm/string.hpp"
 #include "boost/lexical_cast.hpp"
-#include "gtest/gtest_prod.h"
 
 #include "config.h"
 #include "ssdpserverconnection.h"
@@ -54,6 +53,18 @@ public:
         */
         void handle_receive ( http::Request & request );
 
+
+        SsdpEvent parseResponse ( http::Response & response );
+        static inline time_t parse_keep_alive(const std::string & cache_control ) {
+            time_t time = 0;
+            std::string cache_control_clean = boost::erase_all_copy( cache_control, " " );
+            if( cache_control_clean.find( SSDP_OPTION_MAX_AGE ) == 0 ) {
+                time = boost::lexical_cast< time_t > ( cache_control_clean.substr ( SSDP_OPTION_MAX_AGE.size() ) );
+
+            } else assert( false ); //wrong cache control format
+            return time;
+        }
+
 private:
         /** thread sleep time. */
         static const size_t SSDP_THREAD_SLEEP;
@@ -83,21 +94,6 @@ private:
         std::unique_ptr<std::thread> annouceThreadRunner;
         std::chrono::high_resolution_clock::time_point _announce_time;
         void annouceThread();
-
-        FRIEND_TEST( SSDPHeaderParseTest, Response );
-        SsdpEvent parseResponse ( http::Response & response );
-
-        FRIEND_TEST( SSDPTimerTest, ParseTimeTest );
-        FRIEND_TEST( SSDPTimerTest, ParseTimeSpacesTest );
-        static inline time_t parse_keep_alive(const std::string & cache_control ) {
-            time_t time = 0;
-            std::string cache_control_clean = boost::erase_all_copy( cache_control, " " );
-            if( cache_control_clean.find( SSDP_OPTION_MAX_AGE ) == 0 ) {
-                time = boost::lexical_cast< time_t > ( cache_control_clean.substr ( SSDP_OPTION_MAX_AGE.size() ) );
-
-            } else assert( false ); //wrong cache control format
-            return time;
-        }
 };
 }//namespace upnp
 #endif // SSDPSERVER_H

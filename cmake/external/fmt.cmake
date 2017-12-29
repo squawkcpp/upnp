@@ -16,8 +16,9 @@ ExternalProject_Add(
 ExternalProject_Get_Property(cppfmt binary_dir)
 #set(FMT_LIBRARY_PATH ${binary_dir}/fmt/${CMAKE_FIND_LIBRARY_PREFIXES}fmt.a )
 ExternalProject_Get_Property(cppfmt source_dir)
-set(FMT_INCLUDE_DIR "${source_dir}" )
+set(FMT_INCLUDE_DIR ${source_dir} )
 set(FMT_LIBRARY fmt)
 add_library(${FMT_LIBRARY} INTERFACE IMPORTED)
 #set_property(TARGET ${FMT_LIBRARY} PROPERTY IMPORTED_LOCATION ${FMT_LIBRARY_PATH} )
 add_dependencies(${FMT_LIBRARY} cppfmt)
+
