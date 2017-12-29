@@ -1,10 +1,7 @@
 # Dockerfile to install upnp server (UPNP)
-FROM base/archlinux:latest
+FROM busybox:musl
 
 ARG UPNP_TAG_VERSION=master
-
-#RUN pacman -Syu --noconfirm && \
-#    pacman --noconfirm -S boost doxygen hiredis libev hdf5 make
 
 ADD build/upnp_$UPNP_TAG_VERSION.tar.gz /
 

@@ -64,6 +64,7 @@ inline bool validate( std::shared_ptr< Config > config ) {
 //        char buffer[37];
 //        uuid_unparse((unsigned char *)&out, buffer);
 //        config->uuid = std::string(buffer);
+        config->uuid = "7499a4b3-8c03-49a2-9bce-aebbf4512dc8";
     }
     return true;
 }
